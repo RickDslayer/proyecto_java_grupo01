@@ -1,2 +1,8 @@
 /target/
 *.class
+
+# Configuración local y archivos del entorno
+.idea/
+.vscode/
+*.iml
+*.log
