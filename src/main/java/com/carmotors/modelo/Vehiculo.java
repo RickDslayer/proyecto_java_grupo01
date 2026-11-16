@@ -22,7 +22,7 @@ public class Vehiculo {
                 .replaceAll("\\s+", "")
                 .toUpperCase(Locale.ROOT);
 
-        if (placaNormalizada.isEmpty() || placaNormalizada.length() > 10) {
+        if (placaNormalizada.isBlank() || placaNormalizada.length() > 10) {
             throw new IllegalArgumentException("La placa debe tener entre 1 y 10 caracteres");
         }
         if (clienteId <= 0) {
