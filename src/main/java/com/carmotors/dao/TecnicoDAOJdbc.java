@@ -75,6 +75,30 @@ public class TecnicoDAOJdbc implements TecnicoDAO {
         }
     }
 
+    @Override
+    public Optional<Tecnico> buscarPorDocumento(Connection con, String documento) {
+        try (PreparedStatement ps = con.prepareStatement("SELECT " + COLUMNAS + " FROM tecnicos WHERE documento_identidad = ?")) {
+            ps.setString(1, documento);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? Optional.of(mapear(rs)) : Optional.empty();
+            }
+        } catch (SQLException e) {
+            throw new DaoException("No se pudo buscar el técnico por documento.", e);
+        }
+    }
+
+    @Override
+    public boolean tieneOrdenes(Connection con, int id) {
+        try (PreparedStatement ps = con.prepareStatement("SELECT 1 FROM servicios_tecnicos WHERE tecnico_id = ? LIMIT 1")) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new DaoException("No se pudieron consultar las órdenes del técnico.", e);
+        }
+    }
+
     private void datos(PreparedStatement ps, Tecnico t) throws SQLException {
         ps.setString(1, t.getNombre());
         ps.setString(2, t.getDocumentoIdentidad());

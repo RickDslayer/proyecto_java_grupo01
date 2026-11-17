@@ -32,6 +32,8 @@ class TecnicoDAOJdbcIntegracionTest {
                 Tecnico guardado = dao.buscarPorId(con, id).orElseThrow();
                 assertEquals(tecnico.getDocumentoIdentidad(), guardado.getDocumentoIdentidad());
                 assertNull(guardado.getTelefono());
+                assertEquals(id, dao.buscarPorDocumento(con, tecnico.getDocumentoIdentidad()).orElseThrow().getId());
+                assertFalse(dao.tieneOrdenes(con, id));
                 assertTrue(guardado.isActivo());
                 tecnico.setNombre("Actualizado");
                 tecnico.setActivo(false);

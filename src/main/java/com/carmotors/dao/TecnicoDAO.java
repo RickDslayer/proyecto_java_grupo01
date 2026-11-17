@@ -9,6 +9,8 @@ import java.util.Optional;
 public interface TecnicoDAO {
     int crear(Connection conexion, Tecnico tecnico);
     Optional<Tecnico> buscarPorId(Connection conexion, int id);
+    Optional<Tecnico> buscarPorDocumento(Connection conexion, String documento);
+    boolean tieneOrdenes(Connection conexion, int id);
     List<Tecnico> listar(Connection conexion);
     boolean actualizar(Connection conexion, Tecnico tecnico);
     boolean eliminar(Connection conexion, int id);
