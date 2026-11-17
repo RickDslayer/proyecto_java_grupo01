@@ -25,6 +25,7 @@ public class LoteService {
     private final ProveedorConsulta proveedores;
     private final Supplier<Connection> conexiones;
     private final Supplier<LocalDate> hoy;
+    private final PublicadorInventario publicador;
 
     /**
      * En producción: new LoteService(new LoteDAOJdbc(), proveedores,
@@ -33,17 +34,29 @@ public class LoteService {
      */
     public LoteService(LoteDAO dao, ProveedorConsulta proveedores,
                        Supplier<Connection> conexiones, Supplier<LocalDate> hoy) {
+        this(dao, proveedores, conexiones, hoy, new PublicadorInventario());
+    }
+
+    public LoteService(LoteDAO dao, ProveedorConsulta proveedores,
+                       Supplier<Connection> conexiones, Supplier<LocalDate> hoy,
+                       PublicadorInventario publicador) {
         this.dao = dao;
         this.proveedores = proveedores;
         this.conexiones = conexiones;
         this.hoy = hoy;
+        this.publicador = publicador;
     }
 
     // ---------- Ingreso: valida primero y guarda lote y líneas en UNA transacción ----------
 
     public int registrarIngreso(Lote lote) {
         validar(lote);
-        return enTransaccion(con -> dao.crear(con, lote));
+        int id = enTransaccion(con -> dao.crear(con, lote));
+        // Solo después del commit confirmado. Si hubo rollback, no llega aquí.
+        for (LoteLinea linea : lote.getLineas()) {
+            publicador.publicar(linea.getRepuestoId());
+        }
+        return id;
     }
 
     // ---------- Trazabilidad ----------

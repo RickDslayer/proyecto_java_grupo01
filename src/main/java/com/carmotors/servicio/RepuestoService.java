@@ -18,19 +18,28 @@ public class RepuestoService {
     private final RepuestoDAO dao;
     private final ProveedorConsulta proveedores;
     private final Supplier<Connection> conexiones;
+    private final PublicadorInventario publicador;
 
     /** En producción: new RepuestoService(new RepuestoDAOJdbc(), proveedores, () -> ConexionFactory.getInstancia().crearConexion()) */
     public RepuestoService(RepuestoDAO dao, ProveedorConsulta proveedores, Supplier<Connection> conexiones) {
+        this(dao, proveedores, conexiones, new PublicadorInventario());
+    }
+
+    public RepuestoService(RepuestoDAO dao, ProveedorConsulta proveedores,
+                           Supplier<Connection> conexiones, PublicadorInventario publicador) {
         this.dao = dao;
         this.proveedores = proveedores;
         this.conexiones = conexiones;
+        this.publicador = publicador;
     }
 
     // ---------- Cambios: validan primero y usan transacción ----------
 
     public int crear(Repuesto repuesto) {
         validar(repuesto);
-        return enTransaccion(con -> dao.crear(con, repuesto));
+        int id = enTransaccion(con -> dao.crear(con, repuesto));
+        publicador.publicar(id);
+        return id;
     }
 
     public boolean actualizar(Repuesto repuesto) {
@@ -38,14 +47,18 @@ public class RepuestoService {
             throw new ValidacionException("El id del repuesto debe ser mayor que 0.");
         }
         validar(repuesto);
-        return enTransaccion(con -> dao.actualizar(con, repuesto));
+        boolean actualizado = enTransaccion(con -> dao.actualizar(con, repuesto));
+        if (actualizado) publicador.publicar(repuesto.getId());
+        return actualizado;
     }
 
     public boolean eliminar(int id) {
         if (id <= 0) {
             throw new ValidacionException("El id del repuesto debe ser mayor que 0.");
         }
-        return enTransaccion(con -> dao.eliminar(con, id));
+        boolean eliminado = enTransaccion(con -> dao.eliminar(con, id));
+        if (eliminado) publicador.publicar(id);
+        return eliminado;
     }
 
     // ---------- Consultas ----------
