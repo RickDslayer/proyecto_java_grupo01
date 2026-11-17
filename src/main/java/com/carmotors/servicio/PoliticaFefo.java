@@ -31,12 +31,12 @@ public final class PoliticaFefo {
             throw new ValidacionException("La cantidad debe ser mayor que 0.");
         }
         List<ExistenciaLote> utilizables = new ArrayList<>();
-        int totalUtilizable = 0;
+        long totalUtilizable = 0;
         for (ExistenciaLote e : candidatos) {
             boolean vigente = e.fechaCaducidad() == null || !e.fechaCaducidad().isBefore(hoy);
             if (vigente && e.cantidadDisponible() > 0) {
                 utilizables.add(e);
-                totalUtilizable += e.cantidadDisponible();
+                totalUtilizable = Math.addExact(totalUtilizable, e.cantidadDisponible());
             }
         }
         if (totalUtilizable < cantidad) {
