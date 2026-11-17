@@ -309,7 +309,7 @@ CREATE TABLE reserva_estados (
 CREATE TABLE proveedores (
   id       INT UNSIGNED NOT NULL AUTO_INCREMENT,
   nombre   VARCHAR(255) NOT NULL,
-  contacto VARCHAR(15) NULL,
+  contacto VARCHAR(255) NULL,
   email    VARCHAR(150) NULL,
   CONSTRAINT pk_proveedores PRIMARY KEY (id)
 ) ENGINE=InnoDB;
