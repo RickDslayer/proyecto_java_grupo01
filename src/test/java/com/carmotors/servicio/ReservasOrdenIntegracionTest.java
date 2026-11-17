@@ -8,7 +8,6 @@ import com.carmotors.excepcion.DaoException;
 import com.carmotors.excepcion.ValidacionException;
 import com.carmotors.modelo.OrdenServicio;
 import com.carmotors.modelo.Vehiculo;
-import com.carmotors.servicio.contrato.InventarioReservas;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;

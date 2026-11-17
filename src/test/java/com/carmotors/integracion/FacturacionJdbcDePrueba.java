@@ -1,7 +1,7 @@
 package com.carmotors.integracion;
 
 import com.carmotors.excepcion.DaoException;
-import com.carmotors.servicio.contrato.FacturacionOrden;
+import com.carmotors.servicio.FacturacionOrden;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;

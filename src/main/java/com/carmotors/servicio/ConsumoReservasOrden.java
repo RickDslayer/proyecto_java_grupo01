@@ -1,4 +1,4 @@
-package com.carmotors.servicio.contrato;
+package com.carmotors.servicio;
 
 import java.sql.Connection;
 import java.util.Set;

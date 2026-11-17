@@ -1,4 +1,4 @@
-package com.carmotors.servicio.contrato;
+package com.carmotors.servicio;
 
 import com.carmotors.modelo.AsignacionLote;
 import com.carmotors.modelo.ExistenciaLote;

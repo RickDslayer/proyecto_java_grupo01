@@ -7,7 +7,6 @@ import com.carmotors.modelo.ExistenciaLote;
 import com.carmotors.modelo.LineaRepuestoOrden;
 import com.carmotors.modelo.OrdenServicio;
 import com.carmotors.modelo.ReservaOrden;
-import com.carmotors.servicio.contrato.InventarioReservas;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.sql.Connection;
