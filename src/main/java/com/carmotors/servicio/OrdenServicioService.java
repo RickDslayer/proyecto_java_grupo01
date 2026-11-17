@@ -54,6 +54,15 @@ public class OrdenServicioService {
         this(creador.obtenerDAO(), vehiculos, conexiones, reloj, consumo, facturacion, publicador);
     }
 
+    /** Habilita consumo real dejando facturación bloqueada hasta integrar su módulo. */
+    public OrdenServicioService(DAOFactory<OrdenServicioDAO> creador, VehiculoConsulta vehiculos,
+                                Supplier<Connection> conexiones, Clock reloj, ConsumoReservasOrden consumo,
+                                PublicadorInventario publicador) {
+        this(creador.obtenerDAO(), vehiculos, conexiones, reloj, consumo,
+                (con, id, fecha) -> { throw new ValidacionException("La facturación aún no está configurada."); },
+                publicador);
+    }
+
     public OrdenServicioService(OrdenServicioDAO dao, VehiculoConsulta vehiculos,
                                 Supplier<Connection> conexiones, Clock reloj, ConsumoReservasOrden consumo,
                                 FacturacionOrden facturacion, PublicadorInventario publicador) {
