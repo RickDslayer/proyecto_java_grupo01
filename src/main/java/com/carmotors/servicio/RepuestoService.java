@@ -1,6 +1,7 @@
 package com.carmotors.servicio;
 
 import com.carmotors.dao.RepuestoDAO;
+import com.carmotors.dao.factory.DAOFactory;
 import com.carmotors.excepcion.DaoException;
 import com.carmotors.excepcion.ValidacionException;
 import com.carmotors.modelo.Repuesto;
@@ -31,6 +32,12 @@ public class RepuestoService {
         this.proveedores = proveedores;
         this.conexiones = conexiones;
         this.publicador = publicador;
+    }
+
+    /** Permite seleccionar la implementación de persistencia mediante Factory Method. */
+    public RepuestoService(DAOFactory<RepuestoDAO> creador, ProveedorConsulta proveedores,
+                           Supplier<Connection> conexiones, PublicadorInventario publicador) {
+        this(creador.obtenerDAO(), proveedores, conexiones, publicador);
     }
 
     // ---------- Cambios: validan primero y usan transacción ----------
