@@ -8,6 +8,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -42,6 +43,53 @@ public class OrdenServicioDAOJdbc implements OrdenServicioDAO {
         } catch (SQLException e) {
             throw new DaoException("No se pudo registrar la orden de servicio.", e);
         }
+    }
+
+    @Override
+    public Optional<OrdenServicio> bloquearPorId(Connection con, int id) {
+        // Bloquear la misma fila de servicios que utiliza el módulo de asignaciones.
+        try (PreparedStatement ps = con.prepareStatement("SELECT id FROM servicios WHERE id = ? FOR UPDATE")) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) return Optional.empty();
+            }
+            return buscarPorId(con, id);
+        } catch (SQLException e) { throw new DaoException("No se pudo bloquear la orden.", e); }
+    }
+
+    @Override
+    public boolean actualizarEstado(Connection con, int id, String actual, String nuevo, LocalDateTime fecha) {
+        String sql = "UPDATE servicios SET estado_id = (SELECT id FROM servicio_estados WHERE nombre = ?), "
+                + "fecha_completado = CASE WHEN ? = 'Completado' THEN ? ELSE fecha_completado END, "
+                + "fecha_entrega = CASE WHEN ? = 'Entregado' THEN ? ELSE fecha_entrega END "
+                + "WHERE id = ? AND estado_id = (SELECT id FROM servicio_estados WHERE nombre = ?)";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, nuevo); ps.setString(2, nuevo); ps.setTimestamp(3, Timestamp.valueOf(fecha));
+            ps.setString(4, nuevo); ps.setTimestamp(5, Timestamp.valueOf(fecha)); ps.setInt(6, id); ps.setString(7, actual);
+            return ps.executeUpdate() == 1;
+        } catch (SQLException e) { throw new DaoException("No se pudo actualizar el estado de la orden. Comprueba el catálogo de estados.", e); }
+    }
+
+    @Override
+    public boolean existeFactura(Connection con, int id) {
+        try (PreparedStatement ps = con.prepareStatement("SELECT 1 FROM facturas WHERE servicio_id = ?")) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) { return rs.next(); }
+        } catch (SQLException e) { throw new DaoException("No se pudo verificar la factura de la orden.", e); }
+    }
+
+    @Override
+    public boolean consumoCompleto(Connection con, int id) {
+        String sql = "SELECT 1 FROM servicios_repuestos sr WHERE sr.servicio_id = ? AND ("
+                + "sr.cantidad_requerida <> COALESCE((SELECT SUM(r.cantidad) FROM reservas_repuestos r "
+                + "JOIN reserva_estados e ON e.id = r.estado_id WHERE r.servicio_id = sr.servicio_id "
+                + "AND r.repuesto_id = sr.repuesto_id AND e.nombre = 'CONSUMIDA'), 0) "
+                + "OR EXISTS (SELECT 1 FROM reservas_repuestos r JOIN reserva_estados e ON e.id = r.estado_id "
+                + "WHERE r.servicio_id = sr.servicio_id AND r.repuesto_id = sr.repuesto_id AND e.nombre = 'ACTIVA')) LIMIT 1";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) { return !rs.next(); }
+        } catch (SQLException e) { throw new DaoException("No se pudo comprobar el consumo de la orden.", e); }
     }
 
     @Override public Optional<OrdenServicio> buscarPorId(Connection con, int id) {

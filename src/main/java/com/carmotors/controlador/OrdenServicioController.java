@@ -39,6 +39,10 @@ public class OrdenServicioController {
         return ejecutar(() -> filas(servicio.listarPorEstado(estado)));
     }
 
+    public String cambiarEstado(String id, String estado) {
+        return ejecutar(() -> { servicio.cambiarEstado(entero(id), estado); return "Estado de la orden actualizado."; });
+    }
+
     private int entero(String id) {
         try { return Integer.parseInt(id == null ? "" : id.trim()); }
         catch (NumberFormatException e) { throw new ValidacionException("Escribe un identificador entero válido."); }

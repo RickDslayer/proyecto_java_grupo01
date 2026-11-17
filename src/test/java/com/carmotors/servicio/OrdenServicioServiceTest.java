@@ -123,6 +123,10 @@ class OrdenServicioServiceTest {
     private static class Memoria implements OrdenServicioDAO {
         final List<OrdenServicio> ordenes = new ArrayList<>();
         boolean falla;
+        public Optional<OrdenServicio> bloquearPorId(Connection c, int id) { throw new UnsupportedOperationException(); }
+        public boolean actualizarEstado(Connection c, int id, String a, String n, LocalDateTime fecha) { throw new UnsupportedOperationException(); }
+        public boolean existeFactura(Connection c, int id) { throw new UnsupportedOperationException(); }
+        public boolean consumoCompleto(Connection c, int id) { throw new UnsupportedOperationException(); }
         public int crear(Connection con, OrdenServicio o) {
             if (falla) throw new DaoException("Error de prueba");
             ordenes.add(o); return ordenes.size();

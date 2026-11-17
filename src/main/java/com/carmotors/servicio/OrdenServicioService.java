@@ -13,17 +13,27 @@ import java.sql.SQLException;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
+import java.util.Map;
+import com.carmotors.servicio.contrato.ConsumoReservasOrden;
+import com.carmotors.servicio.contrato.FacturacionOrden;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-/** Tarea 05: alta y consulta, sin asignaciones, reservas ni transiciones posteriores. */
+/** Alta, consulta y ciclo de vida de órdenes; consumo/facturación mediante contratos transaccionales. */
 public class OrdenServicioService {
     private final OrdenServicioDAO dao;
     private final VehiculoConsulta vehiculos;
     private final Supplier<Connection> conexiones;
     private final Clock reloj;
+    private final ConsumoReservasOrden consumo;
+    private final FacturacionOrden facturacion;
+    private final PublicadorInventario publicador;
+    private static final Map<String, String> SIGUIENTE = Map.of(
+            "Pendiente", "En Proceso", "En Proceso", "Completado",
+            "Completado", "Facturado", "Facturado", "Entregado");
 
     public OrdenServicioService(DAOFactory<OrdenServicioDAO> creador, VehiculoConsulta vehiculos,
                                 Supplier<Connection> conexiones, Clock reloj) {
@@ -32,6 +42,24 @@ public class OrdenServicioService {
 
     public OrdenServicioService(OrdenServicioDAO dao, VehiculoConsulta vehiculos,
                                 Supplier<Connection> conexiones, Clock reloj) {
+        this(dao, vehiculos, conexiones, reloj,
+                (con, id) -> { throw new ValidacionException("El consumo de reservas aún no está configurado."); },
+                (con, id, fecha) -> { throw new ValidacionException("La facturación aún no está configurada."); },
+                new PublicadorInventario());
+    }
+
+    public OrdenServicioService(DAOFactory<OrdenServicioDAO> creador, VehiculoConsulta vehiculos,
+                                Supplier<Connection> conexiones, Clock reloj, ConsumoReservasOrden consumo,
+                                FacturacionOrden facturacion, PublicadorInventario publicador) {
+        this(creador.obtenerDAO(), vehiculos, conexiones, reloj, consumo, facturacion, publicador);
+    }
+
+    public OrdenServicioService(OrdenServicioDAO dao, VehiculoConsulta vehiculos,
+                                Supplier<Connection> conexiones, Clock reloj, ConsumoReservasOrden consumo,
+                                FacturacionOrden facturacion, PublicadorInventario publicador) {
+        this.consumo = Objects.requireNonNull(consumo);
+        this.facturacion = Objects.requireNonNull(facturacion);
+        this.publicador = Objects.requireNonNull(publicador);
         this.dao = Objects.requireNonNull(dao);
         this.vehiculos = Objects.requireNonNull(vehiculos);
         this.conexiones = Objects.requireNonNull(conexiones);
@@ -75,6 +103,56 @@ public class OrdenServicioService {
         } catch (SQLException e) {
             throw new DaoException("No se pudo administrar la conexión de órdenes.", e);
         }
+    }
+
+    public void iniciarOrden(int id) { cambiarEstado(id, "En Proceso"); }
+    public void completarOrden(int id) { cambiarEstado(id, "Completado"); }
+    public void facturarOrden(int id) { cambiarEstado(id, "Facturado"); }
+    public void entregarOrden(int id) { cambiarEstado(id, "Entregado"); }
+
+    public void cambiarEstado(int id, String destino) {
+        validarId(id);
+        String nuevo = opcion(destino, List.of("Pendiente", "En Proceso", "Completado", "Facturado", "Entregado"), "estado");
+        Set<Integer> afectados = Set.of();
+        try (Connection con = conexiones.get()) {
+            con.setAutoCommit(false);
+            try {
+                OrdenServicio orden = dao.bloquearPorId(con, id)
+                        .orElseThrow(() -> new ValidacionException("No existe la orden indicada."));
+                if (!nuevo.equals(SIGUIENTE.get(orden.getEstado()))) {
+                    throw new ValidacionException("Transición no permitida: " + orden.getEstado() + " → " + nuevo + ".");
+                }
+                LocalDateTime fecha = LocalDateTime.now(reloj).withNano(0);
+                if (fecha.isBefore(orden.getFechaRecepcion())
+                        || (orden.getFechaCompletado() != null && fecha.isBefore(orden.getFechaCompletado()))) {
+                    throw new ValidacionException("La fecha de la operación no puede ser anterior a las fechas de la orden.");
+                }
+                if ("Completado".equals(nuevo)) {
+                    afectados = Set.copyOf(consumo.consumir(con, id));
+                    if (!dao.consumoCompleto(con, id)) {
+                        throw new ValidacionException("No se puede completar: faltan consumos o quedan reservas activas.");
+                    }
+                } else if ("Facturado".equals(nuevo)) {
+                    if (dao.existeFactura(con, id)) throw new ValidacionException("La orden ya tiene una factura.");
+                    facturacion.facturar(con, id, fecha);
+                    if (!dao.existeFactura(con, id)) throw new ValidacionException("No se generó la factura de la orden.");
+                } else if ("Entregado".equals(nuevo) && !dao.existeFactura(con, id)) {
+                    throw new ValidacionException("No se puede entregar una orden sin factura persistida.");
+                }
+                if (!dao.actualizarEstado(con, id, orden.getEstado(), nuevo, fecha)) {
+                    throw new ValidacionException("El estado de la orden cambió; vuelve a consultarla.");
+                }
+                con.commit();
+            } catch (RuntimeException | SQLException e) {
+                try { con.rollback(); } catch (SQLException rollback) { e.addSuppressed(rollback); }
+                if (e instanceof RuntimeException runtime) throw runtime;
+                throw new DaoException("No se pudo confirmar la transición de la orden.", e);
+            }
+        } catch (SQLException e) {
+            throw new DaoException("No se pudo administrar la conexión de la transición.", e);
+        }
+        // El publicador aísla los errores de sus observadores; nunca publica antes del commit.
+        afectados.forEach(publicador::publicar);
     }
 
     public Optional<OrdenServicio> buscarPorId(int id) {

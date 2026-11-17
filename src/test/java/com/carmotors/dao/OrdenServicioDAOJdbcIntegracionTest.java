@@ -38,11 +38,17 @@ class OrdenServicioDAOJdbcIntegracionTest {
                 OrdenServicio guardada = dao.buscarPorId(con, id).orElseThrow();
                 assertEquals(clienteId, guardada.getClienteId());
                 assertEquals(0, guardada.getCostoManoObra().signum());
+                assertEquals("Pendiente", dao.bloquearPorId(con, id).orElseThrow().getEstado());
+                assertFalse(dao.existeFactura(con, id));
+                assertTrue(dao.consumoCompleto(con, id)); // Sin líneas no hay repuestos pendientes.
+                assertTrue(dao.actualizarEstado(con, id, "Pendiente", "En Proceso", o.getFechaRecepcion()));
+                assertFalse(dao.actualizarEstado(con, id, "Pendiente", "Completado", o.getFechaRecepcion()));
+
                 try (PreparedStatement ps = con.prepareStatement("INSERT INTO servicios_detalle (servicio_id, servicio_catalogo_id, precio_cobrado) VALUES (?, ?, ?)")) {
                     ps.setInt(1, id); ps.setInt(2, catalogoId); ps.setBigDecimal(3, new BigDecimal("123.45")); ps.executeUpdate();
                 }
                 assertEquals(0, new BigDecimal("123.45").compareTo(dao.buscarPorId(con, id).orElseThrow().getCostoManoObra()));
-                assertTrue(dao.listarPorEstado(con, "Pendiente").stream().anyMatch(x -> x.getId() == id));
+                assertTrue(dao.listarPorEstado(con, "En Proceso").stream().anyMatch(x -> x.getId() == id));
                 assertTrue(dao.listarPorVehiculo(con, vehiculoId).stream().anyMatch(x -> x.getId() == id));
                 con.rollback();
                 assertTrue(dao.buscarPorId(con, id).isEmpty());
