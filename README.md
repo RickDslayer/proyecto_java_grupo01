@@ -65,3 +65,22 @@ identifica el repuesto por su ID y usa el orden del filtro. En un empate de
 cantidad se ordena por nombre y luego por código.
 
 El fixture independiente se verifica con `mvn -Dtest=ConsumoRepuestosStrategyTest test`.
+
+## Cálculo y detalle de factura
+
+`CalculadorFactura` recibe un puerto `ConsultaOrdenCompletada` y la tasa
+de impuesto como fracción. Por ejemplo, `0.19` representa 19 %. La tasa
+vigente queda pendiente de confirmación del docente y el servicio no fija
+un valor por defecto.
+
+El adaptador del puerto debe tomar el precio histórico de
+`servicios_repuestos.precio_unitario_venta` y el importe de cada operación de
+`servicios_detalle.precio_cobrado`. El subtotal suma las unidades por su
+precio histórico más la mano de obra. Los importes de entrada respetan los
+dos decimales del esquema. Se aplica la tasa una sola vez sobre el subtotal
+y se redondea el impuesto a dos decimales con `HALF_UP`. El total suma el
+subtotal y el impuesto redondeado.
+
+El calculador devuelve el detalle y los totales. La persistencia y el cambio
+de estado pertenecen al flujo de facturación del taller. El doble en memoria
+del puerto se ejecuta con `mvn -Dtest=CalculadorFacturaTest test`.
