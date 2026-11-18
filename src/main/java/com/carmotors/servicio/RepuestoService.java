@@ -11,6 +11,10 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+/**
+ * SERVICIO DE REPUESTOS: valida y guarda por medio de RepuestoDAO.
+ * Si la operacion confirma el cambio, avisa mediante PublicadorInventario.
+ */
 public class RepuestoService {
     private static final BigDecimal PRECIO_MAXIMO = new BigDecimal("99999999.99"); // DECIMAL(10,2)
     private static final int NOMBRE_MAXIMO = 255;

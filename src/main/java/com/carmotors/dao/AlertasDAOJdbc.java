@@ -9,21 +9,30 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Único lugar con SQL para obtener el mínimo configurado por repuesto. */
+/** DAO JDBC: lee de MySQL los repuestos y sus minimos. No calcula alertas. */
 public class AlertasDAOJdbc implements AlertasDAO {
     @Override
     public List<RepuestoMinimo> listarRepuestos(Connection conexion) {
+        List<RepuestoMinimo> repuestos = new ArrayList<>();
+        // MySQL -> DAO: traemos id, nombre y stock minimo.
         String sql = "SELECT id, nombre, stock_minimo FROM repuestos ORDER BY id";
-        List<RepuestoMinimo> lista = new ArrayList<>();
-        try (PreparedStatement ps = conexion.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
-                lista.add(new RepuestoMinimo(rs.getInt("id"), rs.getString("nombre"),
-                        rs.getInt("stock_minimo")));
+
+        try (PreparedStatement sentencia = conexion.prepareStatement(sql);
+             ResultSet resultados = sentencia.executeQuery()) {
+
+            while (resultados.next()) {
+                int id = resultados.getInt("id");
+                String nombre = resultados.getString("nombre");
+                int minimo = resultados.getInt("stock_minimo");
+
+                // DAO -> Modelo: cada fila se transforma en un objeto normal.
+                RepuestoMinimo repuesto = new RepuestoMinimo(id, nombre, minimo);
+                repuestos.add(repuesto);
             }
-            return lista;
-        } catch (SQLException e) {
-            throw new DaoException("No se pudieron consultar los mínimos de inventario.", e);
+
+            return repuestos;
+        } catch (SQLException error) {
+            throw new DaoException("No se pudieron consultar los minimos de inventario.", error);
         }
     }
 }

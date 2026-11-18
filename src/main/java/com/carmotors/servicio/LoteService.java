@@ -17,6 +17,10 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+/**
+ * SERVICIO DE LOTES: guarda ingresos mediante LoteDAO.
+ * SOLO tras confirmar la transaccion publica los repuestos que cambiaron.
+ */
 public class LoteService {
     private static final BigDecimal PRECIO_MAXIMO = new BigDecimal("99999999.99"); // DECIMAL(10,2)
     private static final int CODIGO_MAXIMO = 50;

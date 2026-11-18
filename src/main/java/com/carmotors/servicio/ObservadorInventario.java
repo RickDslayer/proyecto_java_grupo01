@@ -1,6 +1,6 @@
 package com.carmotors.servicio;
 
-/** Se entera de un cambio que ya fue confirmado en la base. */
+/** INTERFAZ OBSERVER: el publicador llama a este metodo al avisar un cambio. */
 public interface ObservadorInventario {
     void inventarioCambio(int repuestoId);
 }
