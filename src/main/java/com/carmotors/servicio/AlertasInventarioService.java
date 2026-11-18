@@ -28,7 +28,7 @@ public class AlertasInventarioService implements ObservadorInventario {
     private final Supplier<Connection> conexiones;
     private final Supplier<LocalDate> hoy;
     private final int diasAviso;
-    private volatile List<AlertaInventario> ultimasAlertas = List.of();
+    private List<AlertaInventario> ultimasAlertas = new ArrayList<>();
 
     // Recibe las dependencias, la fecha de referencia y los dias de aviso.
     public AlertasInventarioService(AlertasDAO dao,
@@ -64,7 +64,7 @@ public class AlertasInventarioService implements ObservadorInventario {
         }
 
         // Guardamos el resultado para consultarlo sin volver a calcular.
-        ultimasAlertas = List.copyOf(alertas);
+        ultimasAlertas = new ArrayList<>(alertas);
         return alertas;
     }
 
@@ -132,7 +132,7 @@ public class AlertasInventarioService implements ObservadorInventario {
 
     /** Observer: al recibir el evento, actualiza las alertas guardadas en memoria. */
     @Override
-    public void actualizar(int repuestoId) {
+    public void inventarioCambio(int repuestoId) {
         // Un evento confirmado obliga a recalcular el reporte en memoria.
         consultarAlertas();
     }

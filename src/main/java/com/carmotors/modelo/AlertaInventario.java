@@ -51,14 +51,4 @@ public class AlertaInventario {
         return "CADUCIDAD PROXIMA | " + nombreRepuesto + " | lote: " + codigoLote
                 + " | vence: " + caducidad + " | unidades: " + cantidad;
     }
-
-    // Compatibilidad con los accesos de solo lectura anteriores.
-    public String tipo() { return tipo; }
-    public int repuestoId() { return repuestoId; }
-    public String nombreRepuesto() { return nombreRepuesto; }
-    public Integer loteId() { return loteId; }
-    public String codigoLote() { return codigoLote; }
-    public LocalDate caducidad() { return caducidad; }
-    public long cantidad() { return cantidad; }
-    public long minimo() { return minimo; }
 }

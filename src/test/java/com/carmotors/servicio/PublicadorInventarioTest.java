@@ -5,11 +5,11 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-class ObservadorCompatibilidadTest {
-    @Test void ambosNombresNotificanYSePuedeDesuscribirDuranteLaPublicacion() {
+class PublicadorInventarioTest {
+    @Test void notificaYPermiteDesuscribirDuranteLaPublicacion() {
         List<Integer> recibidos=new ArrayList<>();
         ObservadorInventario observador=recibidos::add;
-        observador.actualizar(1);
+        observador.inventarioCambio(1);
         observador.inventarioCambio(2);
         PublicadorInventario publicador=new PublicadorInventario();
         ObservadorInventario[] temporal=new ObservadorInventario[1];

@@ -20,9 +20,4 @@ public class RepuestoMinimo {
     public int getId() { return id; }
     public String getNombre() { return nombre; }
     public int getStockMinimo() { return stockMinimo; }
-
-    // Compatibilidad con los accesos de solo lectura anteriores.
-    public int id() { return id; }
-    public String nombre() { return nombre; }
-    public int stockMinimo() { return stockMinimo; }
 }

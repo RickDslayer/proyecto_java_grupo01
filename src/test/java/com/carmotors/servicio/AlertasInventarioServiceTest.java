@@ -38,25 +38,25 @@ class AlertasInventarioServiceTest {
 
     @Test void detectaStockBajoConReservasYExcluyeVencidos() {
         List<AlertaInventario> alertas = crear(7).consultarAlertas();
-        AlertaInventario bajo = alertas.stream().filter(a -> a.tipo().equals("STOCK_BAJO")).findFirst().orElseThrow();
-        assertEquals(7, bajo.repuestoId());
-        assertEquals(13, bajo.cantidad()); // 6 + 4 + 2 + 1 (vencido excluido)
-        assertEquals(14, bajo.minimo());
+        AlertaInventario bajo = alertas.stream().filter(a -> a.getTipo().equals("STOCK_BAJO")).findFirst().orElseThrow();
+        assertEquals(7, bajo.getRepuestoId());
+        assertEquals(13, bajo.getCantidad()); // 6 + 4 + 2 + 1 (vencido excluido)
+        assertEquals(14, bajo.getMinimo());
     }
 
     @Test void caducidadOpcionalVencidaYUmbral() {
         List<AlertaInventario> alertas = crear(7).consultarAlertas();
-        assertEquals(2, alertas.stream().filter(a -> a.tipo().equals("CADUCIDAD_PROXIMA")).count());
-        assertTrue(alertas.stream().anyMatch(a -> "L-A".equals(a.codigoLote())));
-        assertTrue(alertas.stream().anyMatch(a -> "L-E".equals(a.codigoLote())));
-        assertFalse(alertas.stream().anyMatch(a -> "L-B".equals(a.codigoLote()) || "L-C".equals(a.codigoLote()) || "L-D".equals(a.codigoLote())));
+        assertEquals(2, alertas.stream().filter(a -> a.getTipo().equals("CADUCIDAD_PROXIMA")).count());
+        assertTrue(alertas.stream().anyMatch(a -> "L-A".equals(a.getCodigoLote())));
+        assertTrue(alertas.stream().anyMatch(a -> "L-E".equals(a.getCodigoLote())));
+        assertFalse(alertas.stream().anyMatch(a -> "L-B".equals(a.getCodigoLote()) || "L-C".equals(a.getCodigoLote()) || "L-D".equals(a.getCodigoLote())));
     }
 
     @Test void cambiarUmbralCambiaLaLista() {
         assertEquals(1, crear(0).consultarAlertas().stream()
-                .filter(a -> a.tipo().equals("CADUCIDAD_PROXIMA")).count());
+                .filter(a -> a.getTipo().equals("CADUCIDAD_PROXIMA")).count());
         assertEquals(3, crear(8).consultarAlertas().stream()
-                .filter(a -> a.tipo().equals("CADUCIDAD_PROXIMA")).count());
+                .filter(a -> a.getTipo().equals("CADUCIDAD_PROXIMA")).count());
     }
 
     @Test void suscribirDesuscribirYReporte() {
