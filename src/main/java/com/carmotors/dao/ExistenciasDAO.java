@@ -4,10 +4,16 @@ import com.carmotors.modelo.StockLote;
 import java.sql.Connection;
 import java.util.List;
 
-/** Contrato de SOLO LECTURA. Nunca inserta reservas ni consume unidades. */
+/**
+ * Contrato de consultas de inventario (principio DIP de SOLID).
+ * ExistenciasService conoce esta interfaz, no una implementación concreta.
+ * Solo consulta información; no hace reservas, retiros ni commit.
+ */
 public interface ExistenciasDAO {
-    /** Todas las líneas de lotes de un repuesto, con reservas ACTIVA agrupadas. */
+
+    // Devuelve todos los lotes asociados a un repuesto, con reservas ACTIVAS.
     List<StockLote> porRepuesto(Connection conexion, int repuestoId);
-    /** Una línea de lote, lista vacía si no existe. */
+
+    // Devuelve la fila de un lote y repuesto concreto. Lista vacía si no existe.
     List<StockLote> porLote(Connection conexion, int loteId, int repuestoId);
 }

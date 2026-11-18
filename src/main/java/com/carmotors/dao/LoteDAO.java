@@ -5,7 +5,8 @@ import com.carmotors.modelo.Lote;
 import java.sql.Connection;
 import java.util.List;
 
-/** Acceso a datos de lotes. Recibe la conexión: no la cierra ni hace commit. */
+/** CONTRATO DAO: LoteService llama a estos metodos; LoteDAOJdbc ejecuta el SQL.
+ * Acceso a datos de lotes. Recibe la conexión: no la cierra ni hace commit. */
 public interface LoteDAO {
     /** Guarda el lote y todas sus líneas. Devuelve el id del lote. */
     int crear(Connection con, Lote lote);

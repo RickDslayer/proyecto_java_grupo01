@@ -19,6 +19,7 @@ import java.util.List;
  *     ingresó antes (FIFO); si aún empatan, el de menor id.
  *  6. Si un lote no alcanza, se completa con el siguiente (la cantidad se reparte).
  *
+ * LoteService.seleccionarFefo llama a asignar().
  * Es una clase sin base de datos: recibe los candidatos y la fecha de hoy, y devuelve el plan.
  */
 public final class PoliticaFefo {
@@ -26,6 +27,7 @@ public final class PoliticaFefo {
     private PoliticaFefo() {
     }
 
+    /** Solo prepara un plan: NO actualiza lotes, NO reserva y NO consume. */
     public static List<AsignacionLote> asignar(List<ExistenciaLote> candidatos, int cantidad, LocalDate hoy) {
         if (cantidad <= 0) {
             throw new ValidacionException("La cantidad debe ser mayor que 0.");
@@ -33,10 +35,10 @@ public final class PoliticaFefo {
         List<ExistenciaLote> utilizables = new ArrayList<>();
         long totalUtilizable = 0;
         for (ExistenciaLote e : candidatos) {
-            boolean vigente = e.fechaCaducidad() == null || !e.fechaCaducidad().isBefore(hoy);
-            if (vigente && e.cantidadDisponible() > 0) {
+            boolean vigente = e.getFechaCaducidad() == null || !e.getFechaCaducidad().isBefore(hoy);
+            if (vigente && e.getCantidadDisponible() > 0) {
                 utilizables.add(e);
-                totalUtilizable = Math.addExact(totalUtilizable, e.cantidadDisponible());
+                totalUtilizable = Math.addExact(totalUtilizable, e.getCantidadDisponible());
             }
         }
         if (totalUtilizable < cantidad) {
@@ -51,29 +53,30 @@ public final class PoliticaFefo {
             if (faltante == 0) {
                 break;
             }
-            int tomar = Math.min(faltante, e.cantidadDisponible());
-            plan.add(new AsignacionLote(e.loteId(), e.codigo(), e.repuestoId(), tomar, e.fechaCaducidad()));
+            int tomar = Math.min(faltante, e.getCantidadDisponible());
+            plan.add(new AsignacionLote(e.getLoteId(), e.getCodigo(), e.getRepuestoId(), tomar, e.getFechaCaducidad()));
             faltante -= tomar;
         }
         return plan;
     }
 
+    /** Ordena primero por caducidad, luego por fecha de ingreso y finalmente por ID. */
     private static int comparar(ExistenciaLote a, ExistenciaLote b) {
-        boolean aSinCaducidad = a.fechaCaducidad() == null;
-        boolean bSinCaducidad = b.fechaCaducidad() == null;
+        boolean aSinCaducidad = a.getFechaCaducidad() == null;
+        boolean bSinCaducidad = b.getFechaCaducidad() == null;
         if (aSinCaducidad != bSinCaducidad) {
             return aSinCaducidad ? 1 : -1;              // los que sí caducan van primero
         }
         if (!aSinCaducidad) {
-            int porCaducidad = a.fechaCaducidad().compareTo(b.fechaCaducidad());
+            int porCaducidad = a.getFechaCaducidad().compareTo(b.getFechaCaducidad());
             if (porCaducidad != 0) {
                 return porCaducidad;                     // vence antes, sale antes
             }
         }
-        int porIngreso = a.fechaIngreso().compareTo(b.fechaIngreso());
+        int porIngreso = a.getFechaIngreso().compareTo(b.getFechaIngreso());
         if (porIngreso != 0) {
             return porIngreso;                           // empate: el más antiguo primero
         }
-        return Integer.compare(a.loteId(), b.loteId());
+        return Integer.compare(a.getLoteId(), b.getLoteId());
     }
 }

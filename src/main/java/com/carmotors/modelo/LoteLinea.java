@@ -3,7 +3,8 @@ package com.carmotors.modelo;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-/** Un repuesto que llega dentro de un lote: cuánto llegó, a qué costo y cuándo caduca (opcional). */
+/** MODELO: parte de un Lote. LoteDAOJdbc guarda cada linea en lotes_repuestos.
+ * Un repuesto que llega dentro de un lote: cuánto llegó, a qué costo y cuándo caduca (opcional). */
 public class LoteLinea {
     private int repuestoId;
     private int cantidadIngresada;

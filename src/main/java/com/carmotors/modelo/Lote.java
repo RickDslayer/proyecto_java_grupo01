@@ -4,7 +4,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Un ingreso de mercancía: un código único, un proveedor, una fecha y una o más líneas de repuestos. */
+/** MODELO: lo crea LoteController, lo valida LoteService y lo guarda LoteDAOJdbc.
+ * Un ingreso de mercancía: un código único, un proveedor, una fecha y una o más líneas de repuestos. */
 public class Lote {
     private int id;
     private String codigo;
@@ -23,6 +24,7 @@ public class Lote {
     public List<LoteLinea> getLineas() { return lineas; }
     public void setLineas(List<LoteLinea> lineas) { this.lineas = lineas; }
 
+    /** Agrega un repuesto al ingreso. No guarda nada aun en MySQL. */
     public void agregarLinea(LoteLinea linea) {
         this.lineas.add(linea);
     }

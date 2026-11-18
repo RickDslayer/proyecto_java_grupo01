@@ -12,10 +12,9 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-/**
- * SERVICIO DE REPUESTOS: valida y guarda por medio de RepuestoDAO.
- * Si la operacion confirma el cambio, avisa mediante PublicadorInventario.
- */
+// SERVICE: aplica validaciones y coordina operaciones con el DAO.
+// Recibe instrucciones de RepuestoController y publica cambios con Observer después del commit.
+// Conservamos las lambdas para pasar acciones a leer() y enTransaccion().
 public class RepuestoService {
     private static final BigDecimal PRECIO_MAXIMO = new BigDecimal("99999999.99"); // DECIMAL(10,2)
     private static final int NOMBRE_MAXIMO = 255;
@@ -46,6 +45,8 @@ public class RepuestoService {
 
     // ---------- Cambios: validan primero y usan transacción ----------
 
+    // PASO 1: validar. PASO 2: guardar mediante DAO dentro de una transacción.
+    // PASO 3: cuando commit ya terminó, avisar a los observadores.
     public int crear(Repuesto repuesto) {
         validar(repuesto);
         int id = enTransaccion(con -> dao.crear(con, repuesto));
@@ -53,6 +54,7 @@ public class RepuestoService {
         return id;
     }
 
+    // Actualizar sigue el mismo recorrido que crear y solo notifica si hubo cambio.
     public boolean actualizar(Repuesto repuesto) {
         if (repuesto != null && repuesto.getId() <= 0) {
             throw new ValidacionException("El id del repuesto debe ser mayor que 0.");
@@ -63,6 +65,7 @@ public class RepuestoService {
         return actualizado;
     }
 
+    // Validar ID -> DAO elimina -> commit -> Observer, si se eliminó realmente.
     public boolean eliminar(int id) {
         if (id <= 0) {
             throw new ValidacionException("El id del repuesto debe ser mayor que 0.");
@@ -74,6 +77,7 @@ public class RepuestoService {
 
     // ---------- Consultas ----------
 
+    // CONSULTA: leer() abre/cierra conexión; DAO hace SELECT; retorna la lista.
     public List<Repuesto> listar() {
         return leer(con -> dao.listar(con));
     }
@@ -105,6 +109,8 @@ public class RepuestoService {
 
     // ---------- Validaciones ----------
 
+    // Reglas de negocio: verificar datos antes de escribir en MySQL.
+    // RepuestoController convierte tipos, pero el Service decide si son válidos.
     private void validar(Repuesto r) {
         if (r == null) {
             throw new ValidacionException("El repuesto no puede ser nulo.");
@@ -156,6 +162,8 @@ public class RepuestoService {
     // ---------- Manejo de la conexión ----------
 
     /** Abre la conexión, ejecuta la acción y la cierra. Para consultas. */
+    // La lambda recibida es la operación DAO que queremos consultar.
+    // No se hace commit porque aquí no se escriben datos.
     private <T> T leer(Function<Connection, T> accion) {
         try (Connection con = conexiones.get()) {
             return accion.apply(con);
@@ -165,6 +173,8 @@ public class RepuestoService {
     }
 
     /** Igual, pero con commit si todo sale bien y rollback si algo falla. Para cambios. */
+    // Recibe la lambda con la operación DAO, inicia transacción y confirma.
+    // Si falla: rollback. El Observer se llama después, fuera de este método.
     private <T> T enTransaccion(Function<Connection, T> accion) {
         try (Connection con = conexiones.get()) {
             con.setAutoCommit(false);

@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.function.Supplier;
 
 /** Recibe texto (lo que escribe el usuario), lo convierte y llama al servicio. Devuelve mensajes listos para mostrar. */
+// CONTROLLER: recibe datos de texto desde la vista, los convierte a Java
+// y llama a RepuestoService. No contiene consultas SQL.
+// Las lambdas envían acciones al método ejecutar(), que controla los errores.
 public class RepuestoController {
     private final RepuestoService servicio;
 
@@ -17,6 +20,8 @@ public class RepuestoController {
         this.servicio = servicio;
     }
 
+    // Recibe cadenas desde MenuPruebasInventario.
+    // Construye Repuesto y llama a servicio.crear() dentro de ejecutar().
     public String crear(String nombre, String tipoId, String marcaId, String proveedorId,
                         String precioCompra, String precioVenta, String stockMinimo) {
         return ejecutar(() -> {
@@ -26,6 +31,7 @@ public class RepuestoController {
         });
     }
 
+    // Convierte los datos del formulario y pide actualizar al Service.
     public String actualizar(String id, String nombre, String tipoId, String marcaId, String proveedorId,
                              String precioCompra, String precioVenta, String stockMinimo) {
         return ejecutar(() -> {
@@ -34,6 +40,7 @@ public class RepuestoController {
         });
     }
 
+    // Convierte el ID a entero y solicita la eliminación al Service.
     public String eliminar(String id) {
         return ejecutar(() -> servicio.eliminar(entero(id)) ? "Repuesto eliminado." : "No existe un repuesto con ese id.");
     }
@@ -68,6 +75,7 @@ public class RepuestoController {
 
     // ---------- Apoyo ----------
 
+    // Transforma los textos recibidos en un objeto Repuesto; no guarda datos.
     private Repuesto construir(int id, String nombre, String tipoId, String marcaId, String proveedorId,
                                String precioCompra, String precioVenta, String stockMinimo) {
         Repuesto r = new Repuesto();
@@ -90,6 +98,7 @@ public class RepuestoController {
         return new BigDecimal(texto.trim());
     }
 
+    // Transforma los objetos devueltos por el Service en líneas para consola.
     private String formatear(List<Repuesto> lista) {
         if (lista.isEmpty()) {
             return "No se encontraron repuestos.";

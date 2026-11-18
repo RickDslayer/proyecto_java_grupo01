@@ -18,8 +18,9 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * SERVICIO DE LOTES: guarda ingresos mediante LoteDAO.
- * SOLO tras confirmar la transaccion publica los repuestos que cambiaron.
+ * SERVICIO: recibe peticiones de LoteController y aplica reglas del negocio.
+ * Usa LoteDAO para leer o guardar y PublicadorInventario para avisar despues de commit.
+ * Aqui se controlan las transacciones, nunca dentro de LoteDAOJdbc.
  */
 public class LoteService {
     private static final BigDecimal PRECIO_MAXIMO = new BigDecimal("99999999.99"); // DECIMAL(10,2)
@@ -53,6 +54,12 @@ public class LoteService {
 
     // ---------- Ingreso: valida primero y guarda lote y líneas en UNA transacción ----------
 
+    /**
+     * PASO 1: valida el lote.
+     * PASO 2: llama a LoteDAO.crear dentro de una transaccion.
+     * PASO 3: cuando commit termina correctamente, avisa al Observer.
+     * PASO 4: devuelve al Controller el ID creado.
+     */
     public int registrarIngreso(Lote lote) {
         validar(lote);
         int id = enTransaccion(con -> dao.crear(con, lote));
@@ -65,25 +72,30 @@ public class LoteService {
 
     // ---------- Trazabilidad ----------
 
+    /** Trazabilidad por codigo: consulta al DAO y devuelve las lineas del lote. */
     public List<ExistenciaLote> buscarPorCodigo(String codigo) {
         String buscado = codigo == null ? "" : codigo.trim();
         return leer(con -> dao.buscarPorCodigo(con, buscado));
     }
 
+    /** Trazabilidad por repuesto: pide al DAO todos sus lotes. */
     public List<ExistenciaLote> listarPorRepuesto(int repuestoId) {
         return leer(con -> dao.listarPorRepuesto(con, repuestoId));
     }
 
+    /** Trazabilidad por proveedor: pide al DAO sus ingresos registrados. */
     public List<ExistenciaLote> listarPorProveedor(int proveedorId) {
         return leer(con -> dao.listarPorProveedor(con, proveedorId));
     }
 
     // ---------- Stock: siempre calculado desde los lotes, nunca guardado aparte ----------
 
+    /** Solicita al DAO las unidades fisicas existentes del repuesto. */
     public int stockFisico(int repuestoId) {
         return leer(con -> dao.stockFisico(con, repuestoId));
     }
 
+    /** Solicita al DAO fisico y reservas activas; resta ambos valores. */
     public int stockDisponible(int repuestoId) {
         return leer(con -> dao.stockFisico(con, repuestoId) - dao.stockReservado(con, repuestoId));
     }
@@ -104,6 +116,7 @@ public class LoteService {
 
     // ---------- Validaciones ----------
 
+    /** Verifica los datos generales y cada linea antes de entrar a MySQL. */
     private void validar(Lote lote) {
         if (lote == null) {
             throw new ValidacionException("El lote no puede ser nulo.");
@@ -143,6 +156,7 @@ public class LoteService {
         }
     }
 
+    /** Revisa el repuesto, las cantidades, el costo y su caducidad. */
     private void validarLinea(LoteLinea linea, LocalDate fechaIngreso) {
         if (linea == null) {
             throw new ValidacionException("Hay una línea vacía en el lote.");
@@ -160,6 +174,7 @@ public class LoteService {
         }
     }
 
+    /** Comprueba que el costo se pueda guardar en DECIMAL(10,2). */
     private void validarCosto(BigDecimal costo) {
         if (costo == null) {
             throw new ValidacionException("El costo unitario es obligatorio.");
@@ -178,6 +193,10 @@ public class LoteService {
     // ---------- Manejo de la conexión ----------
 
     /** Abre la conexión, ejecuta la acción y la cierra. Para consultas. */
+    /**
+     * Para consultas: abre una conexion, ejecuta la lambda que llama al DAO,
+     * devuelve el resultado y cierra la conexion con try-with-resources.
+     */
     private <T> T leer(Function<Connection, T> accion) {
         try (Connection con = conexiones.get()) {
             return accion.apply(con);
@@ -187,6 +206,11 @@ public class LoteService {
     }
 
     /** Igual, pero con commit si todo sale bien y rollback si algo falla. Para cambios. */
+    /**
+     * Para escrituras: abre conexion, desactiva auto-commit, ejecuta el DAO
+     * y confirma (commit). Ante un error, deshace (rollback).
+     * No publica aqui: registrarIngreso publica solo si este metodo regresa bien.
+     */
     private <T> T enTransaccion(Function<Connection, T> accion) {
         try (Connection con = conexiones.get()) {
             con.setAutoCommit(false);

@@ -11,9 +11,13 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+// DAO JDBC: recibe una Connection desde RepuestoService.
+// Ejecuta SQL y convierte ResultSet en objetos Repuesto.
+// No confirma transacciones: el commit/rollback pertenece a RepuestoService.
 public class RepuestoDAOJdbc implements RepuestoDAO {
 
     // Consulta base del catálogo. Cada filtro le agrega un WHERE.
+    // SELECT común: incluye tipo, marca y proveedor. Cada consulta agrega su WHERE.
     private static final String SQL_CATALOGO =
             "SELECT r.id AS id, r.nombre AS nombre, "
                     + "r.repuesto_tipo_id AS tipo_id, rt.nombre AS tipo, "
@@ -66,6 +70,8 @@ public class RepuestoDAOJdbc implements RepuestoDAO {
                 + "FROM lotes_repuestos AS lr WHERE lr.repuesto_id = r.id) < r.stock_minimo");
     }
 
+    // 1. Construir SELECT. 2. Poner parámetros. 3. Ejecutar SELECT.
+    // 4. Recorrer filas. 5. Convertir cada fila a Repuesto con mapear().
     private List<Repuesto> consultar(Connection con, String condicion, Object... parametros) {
         String sql = SQL_CATALOGO + condicion + ORDEN;
         try (PreparedStatement ps = con.prepareStatement(sql)) {
@@ -84,6 +90,7 @@ public class RepuestoDAOJdbc implements RepuestoDAO {
         }
     }
 
+    // Convierte UNA fila del ResultSet en UN objeto Repuesto.
     private Repuesto mapear(ResultSet rs) throws SQLException {
         Repuesto r = new Repuesto();
         r.setId(rs.getInt("id"));
@@ -103,6 +110,8 @@ public class RepuestoDAOJdbc implements RepuestoDAO {
     // ---------- Cambios (dos tablas: el servicio los envuelve en una transacción) ----------
 
     @Override
+    // Guarda en repuestos y proveedores_repuestos usando la misma Connection.
+    // RepuestoService será quien confirme o revierta los cambios.
     public int crear(Connection con, Repuesto r) {
         String sqlRepuesto = "INSERT INTO repuestos "
                 + "(nombre, repuesto_tipo_id, marca_id, precio_venta, stock_minimo) VALUES (?, ?, ?, ?, ?)";

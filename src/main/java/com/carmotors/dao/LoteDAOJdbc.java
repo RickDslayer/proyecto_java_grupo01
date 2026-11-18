@@ -16,6 +16,11 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * DAO JDBC: implementa el contrato LoteDAO.
+ * Solo trabaja con SQL; no valida reglas del negocio ni hace commit.
+ * La conexion la recibe desde LoteService.
+ */
 public class LoteDAOJdbc implements LoteDAO {
 
     // Consulta base de trazabilidad: una fila por (lote, repuesto). Cada filtro le agrega un WHERE.
@@ -51,6 +56,7 @@ public class LoteDAOJdbc implements LoteDAO {
         return consultar(con, "WHERE l.proveedor_id = ?", proveedorId);
     }
 
+    /** Ejecuta una consulta y transforma cada fila en ExistenciaLote. */
     private List<ExistenciaLote> consultar(Connection con, String condicion, Object parametro) {
         String sql = SQL_EXISTENCIAS + condicion + ORDEN;
         try (PreparedStatement ps = con.prepareStatement(sql)) {
@@ -67,6 +73,7 @@ public class LoteDAOJdbc implements LoteDAO {
         }
     }
 
+    /** Lee una fila del ResultSet y construye el modelo de trazabilidad. */
     private ExistenciaLote mapear(ResultSet rs) throws SQLException {
         return new ExistenciaLote(
                 rs.getInt("lote_id"), rs.getString("codigo"),
@@ -96,6 +103,7 @@ public class LoteDAOJdbc implements LoteDAO {
         return sumar(con, sql, repuestoId, "No se pudo consultar las reservas activas.");
     }
 
+    /** Ejecuta el SUM de SQL que reciben las consultas de stock. */
     private int sumar(Connection con, String sql, int repuestoId, String mensajeError) {
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setInt(1, repuestoId);
@@ -111,6 +119,12 @@ public class LoteDAOJdbc implements LoteDAO {
     // ---------- Ingreso (dos tablas: el servicio lo envuelve en una transacción) ----------
 
     @Override
+    /**
+     * PASO 1: inserta cabecera en lotes.
+     * PASO 2: obtiene el ID que genero MySQL.
+     * PASO 3: inserta cada repuesto en lotes_repuestos.
+     * LoteService confirma o revierte ambas tablas en una transaccion.
+     */
     public int crear(Connection con, Lote lote) {
         String sqlLote = "INSERT INTO lotes (codigo, proveedor_id, fecha_ingreso) VALUES (?, ?, ?)";
         String sqlLinea = "INSERT INTO lotes_repuestos "
@@ -120,12 +134,14 @@ public class LoteDAOJdbc implements LoteDAO {
             ps.setString(1, lote.getCodigo());
             ps.setInt(2, lote.getProveedorId());
             ps.setDate(3, Date.valueOf(lote.getFechaIngreso()));
+            // Guardar la cabecera del ingreso.
             ps.executeUpdate();
             int loteId;
             try (ResultSet claves = ps.getGeneratedKeys()) {
                 claves.next();
                 loteId = claves.getInt(1);
             }
+            // Guardar uno por uno los repuestos asociados al lote creado.
             try (PreparedStatement pl = con.prepareStatement(sqlLinea)) {
                 for (LoteLinea linea : lote.getLineas()) {
                     pl.setInt(1, loteId);
