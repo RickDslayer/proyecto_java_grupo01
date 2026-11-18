@@ -1,6 +1,7 @@
 package com.carmotors.servicio;
 
 import com.carmotors.dao.RepuestoDAO;
+import com.carmotors.dao.factory.DAOFactory;
 import com.carmotors.excepcion.DaoException;
 import com.carmotors.excepcion.ValidacionException;
 import com.carmotors.modelo.Repuesto;
@@ -11,6 +12,9 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+// SERVICE: aplica validaciones y coordina operaciones con el DAO.
+// Recibe instrucciones de RepuestoController y publica cambios con Observer después del commit.
+// Conservamos las lambdas para pasar acciones a leer() y enTransaccion().
 public class RepuestoService {
     private static final BigDecimal PRECIO_MAXIMO = new BigDecimal("99999999.99"); // DECIMAL(10,2)
     private static final int NOMBRE_MAXIMO = 255;
@@ -18,38 +22,62 @@ public class RepuestoService {
     private final RepuestoDAO dao;
     private final ProveedorConsulta proveedores;
     private final Supplier<Connection> conexiones;
+    private final PublicadorInventario publicador;
 
     /** En producción: new RepuestoService(new RepuestoDAOJdbc(), proveedores, () -> ConexionFactory.getInstancia().crearConexion()) */
     public RepuestoService(RepuestoDAO dao, ProveedorConsulta proveedores, Supplier<Connection> conexiones) {
+        this(dao, proveedores, conexiones, new PublicadorInventario());
+    }
+
+    public RepuestoService(RepuestoDAO dao, ProveedorConsulta proveedores,
+                           Supplier<Connection> conexiones, PublicadorInventario publicador) {
         this.dao = dao;
         this.proveedores = proveedores;
         this.conexiones = conexiones;
+        this.publicador = publicador;
+    }
+
+    /** Permite seleccionar la implementación de persistencia mediante Factory Method. */
+    public RepuestoService(DAOFactory<RepuestoDAO> creador, ProveedorConsulta proveedores,
+                           Supplier<Connection> conexiones, PublicadorInventario publicador) {
+        this(creador.obtenerDAO(), proveedores, conexiones, publicador);
     }
 
     // ---------- Cambios: validan primero y usan transacción ----------
 
+    // PASO 1: validar. PASO 2: guardar mediante DAO dentro de una transacción.
+    // PASO 3: cuando commit ya terminó, avisar a los observadores.
     public int crear(Repuesto repuesto) {
         validar(repuesto);
-        return enTransaccion(con -> dao.crear(con, repuesto));
+        int id = enTransaccion(con -> dao.crear(con, repuesto));
+        publicador.publicar(id);
+        return id;
     }
 
+    // Actualizar sigue el mismo recorrido que crear y solo notifica si hubo cambio.
     public boolean actualizar(Repuesto repuesto) {
         if (repuesto != null && repuesto.getId() <= 0) {
             throw new ValidacionException("El id del repuesto debe ser mayor que 0.");
         }
         validar(repuesto);
-        return enTransaccion(con -> dao.actualizar(con, repuesto));
+        boolean actualizado = enTransaccion(con -> dao.actualizar(con, repuesto));
+        if (actualizado) publicador.publicar(repuesto.getId());
+        return actualizado;
     }
 
+    // Validar ID -> DAO elimina -> commit -> Observer, si se eliminó realmente.
     public boolean eliminar(int id) {
         if (id <= 0) {
             throw new ValidacionException("El id del repuesto debe ser mayor que 0.");
         }
-        return enTransaccion(con -> dao.eliminar(con, id));
+        boolean eliminado = enTransaccion(con -> dao.eliminar(con, id));
+        if (eliminado) publicador.publicar(id);
+        return eliminado;
     }
 
     // ---------- Consultas ----------
 
+    // CONSULTA: leer() abre/cierra conexión; DAO hace SELECT; retorna la lista.
     public List<Repuesto> listar() {
         return leer(con -> dao.listar(con));
     }
@@ -81,6 +109,8 @@ public class RepuestoService {
 
     // ---------- Validaciones ----------
 
+    // Reglas de negocio: verificar datos antes de escribir en MySQL.
+    // RepuestoController convierte tipos, pero el Service decide si son válidos.
     private void validar(Repuesto r) {
         if (r == null) {
             throw new ValidacionException("El repuesto no puede ser nulo.");
@@ -132,6 +162,8 @@ public class RepuestoService {
     // ---------- Manejo de la conexión ----------
 
     /** Abre la conexión, ejecuta la acción y la cierra. Para consultas. */
+    // La lambda recibida es la operación DAO que queremos consultar.
+    // No se hace commit porque aquí no se escriben datos.
     private <T> T leer(Function<Connection, T> accion) {
         try (Connection con = conexiones.get()) {
             return accion.apply(con);
@@ -141,6 +173,8 @@ public class RepuestoService {
     }
 
     /** Igual, pero con commit si todo sale bien y rollback si algo falla. Para cambios. */
+    // Recibe la lambda con la operación DAO, inicia transacción y confirma.
+    // Si falla: rollback. El Observer se llama después, fuera de este método.
     private <T> T enTransaccion(Function<Connection, T> accion) {
         try (Connection con = conexiones.get()) {
             con.setAutoCommit(false);

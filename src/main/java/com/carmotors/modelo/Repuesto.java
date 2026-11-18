@@ -3,7 +3,11 @@ package com.carmotors.modelo;
 import java.math.BigDecimal;
 
 /** Una fila del catálogo: un repuesto con UNO de sus proveedores y el costo de ese proveedor. */
+// MODELO: almacena los datos de un repuesto.
+// Lo construye RepuestoController y lo utilizan RepuestoService y RepuestoDAOJdbc.
+// No contiene SQL ni abre conexiones.
 public class Repuesto {
+    // Datos que representan el repuesto; solo se modifican con setters.
     private int id;
     private String nombre;
     private int tipoId;
