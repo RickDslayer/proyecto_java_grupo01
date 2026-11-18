@@ -1,4 +1,28 @@
 package com.carmotors.modelo;
 
-/** Datos mínimos necesarios para evaluar alertas de un repuesto. */
-public record RepuestoMinimo(int id, String nombre, int stockMinimo) { }
+/**
+ * MODELO: contiene los datos necesarios para revisar el stock minimo.
+ * AlertasDAOJdbc lo llena desde MySQL y AlertasInventarioService lo utiliza.
+ */
+public class RepuestoMinimo {
+    private final int id;
+    private final String nombre;
+    private final int stockMinimo;
+
+    // Constructor normal: recibe los valores encontrados en la tabla repuestos.
+    public RepuestoMinimo(int id, String nombre, int stockMinimo) {
+        this.id = id;
+        this.nombre = nombre;
+        this.stockMinimo = stockMinimo;
+    }
+
+    // Getters: lectura de datos sin permitir que se cambien accidentalmente.
+    public int getId() { return id; }
+    public String getNombre() { return nombre; }
+    public int getStockMinimo() { return stockMinimo; }
+
+    // Compatibilidad con los accesos de solo lectura anteriores.
+    public int id() { return id; }
+    public String nombre() { return nombre; }
+    public int stockMinimo() { return stockMinimo; }
+}

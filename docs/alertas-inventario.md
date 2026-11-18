@@ -1,62 +1,98 @@
-# Issue #34 — Alertas de inventario (Observer)
+# Issue #34 - Alertas de inventario usando Observer
 
-## Propósito
+## 1. Objetivo
 
-Consultar alertas para consola sin alterar el inventario ni enviar notificaciones externas.
-Las clases nuevas trabajan con los DAO/servicios de la issue #33.
+Avisar cuando un repuesto tiene pocas unidades disponibles o cuando un lote esta por vencer.
+Este modulo no reserva, no retira mercancia y no envia correos ni mensajes.
 
-## Integración
+## 2. Clases principales
 
-- `PublicadorInventario`: suscribe/desuscribe `ObservadorInventario`, y notifica mediante `publicar(repuestoId)`.
-- `LoteService.registrarIngreso`: publica por cada repuesto **después** del `commit`.
-- `RepuestoService.crear/actualizar/eliminar`: publica después de `commit` cuando hay un cambio real.
-- `AlertasInventarioService`: implementa `ObservadorInventario`, recalcula alertas y brinda `consultarAlertas()`, `ultimasAlertas()` y `reporteConsola()`.
-- `AlertasDAOJdbc`: obtiene `repuestos.id`, `nombre` y `stock_minimo` de MySQL. Reutiliza `ExistenciasService` para las cantidades y fechas (no duplica SQL de reservas).
-- `AlertasInventarioController`: `mostrarReporte()` para uso posterior en consola.
+- `ObservadorInventario`: interfaz con el metodo `inventarioCambio(int repuestoId)`.
+- `PublicadorInventario`: guarda los observadores y los notifica.
+- `AlertasInventarioService`: implementa el observador y calcula las alertas.
+- `AlertasDAOJdbc`: consulta `id`, `nombre` y `stock_minimo` de los repuestos.
+- `ExistenciasService`: calcula las cantidades fisicas, reservadas y disponibles.
+- `AlertasInventarioController`: devuelve un texto para mostrar en consola.
 
-Ejemplo de armado (en el futuro `Main` o vista):
+## 3. Que pasa al registrar un lote
 
-```java
-PublicadorInventario publicador = new PublicadorInventario();
-ExistenciasService existencias = new ExistenciasService(
-    new ExistenciasDAOJdbc(),
-    () -> ConexionFactory.getInstancia().crearConexion(), LocalDate::now);
-AlertasInventarioService alertas = new AlertasInventarioService(
-    new AlertasDAOJdbc(), existencias,
-    () -> ConexionFactory.getInstancia().crearConexion(), LocalDate::now, 7);
-publicador.suscribir(alertas);
-LoteService lotes = new LoteService(new LoteDAOJdbc(), proveedores,
-    () -> ConexionFactory.getInstancia().crearConexion(), LocalDate::now, publicador);
-RepuestoService repuestos = new RepuestoService(new RepuestoDAOJdbc(), proveedores,
-    () -> ConexionFactory.getInstancia().crearConexion(), publicador);
-String reporte = new AlertasInventarioController(alertas).mostrarReporte();
-System.out.println(reporte);
-```
+1. `LoteService` valida los datos.
+2. El DAO guarda el lote y sus lineas dentro de una transaccion.
+3. Si todo sale bien se ejecuta `commit()`.
+4. SOLO despues del commit, `LoteService` llama a `publicador.publicar(repuestoId)`.
+5. El publicador llama a `inventarioCambio(repuestoId)` de sus observadores.
+6. `AlertasInventarioService` vuelve a calcular las alertas.
 
-**Importante:** utilizar **la misma instancia** de `PublicadorInventario` para los servicios emisores y el observador. Los constructores antiguos de los servicios siguen existiendo, pero crean un publicador vacío para compatibilidad.
+Si ocurre `rollback()`, no se ejecuta `publicar()`.
 
-## Contratos de negocio
+`RepuestoService` utiliza el mismo mecanismo al crear, actualizar o eliminar.
+Debe usarse la MISMA instancia del publicador en todos los servicios.
 
-- `STOCK_BAJO`: `resumen.disponibleUtilizable < repuestos.stock_minimo`. El disponible utilizable excluye lotes vencidos y resta reservas activas. `stock_minimo = 0` no produce alerta por cero unidades.
-- `CADUCIDAD_PROXIMA`: un lote tiene `cantidad_actual > 0`, caducidad no nula y `hoy <= caducidad <= hoy.plusDays(diasAviso)`. Un lote que caducó ayer no cuenta como *próximo* (puede consultarse por separado como vencido si se amplía la issue).
-- `diasAviso` configurable en el constructor, valor >= 0. `LocalDate` inyectable (`() -> LocalDate.of(...)`) para pruebas repetibles.
-- Unidades enteras (`long`) y fechas `LocalDate`; no se suman precios ni se crean movimientos de consumo.
-- `consultarAlertas()` genera un reporte actualizado aunque ningún evento haya ocurrido todavía.
-- `ultimasAlertas()` devuelve la última foto calculada por consulta o por evento; es **memoria volátil**, no almacenamiento durable.
-- El observador se invoca **después** de un commit exitoso; si la operación hace `rollback`, no ocurre `publicar`.
-- Si falla la actualización de una alerta posterior al commit, `PublicadorInventario` informa por `System.err` y continúa con los otros observadores. No se debe informar que el commit falló cuando realmente ya fue confirmado.
+## 4. Reglas de las alertas
 
-## Alcance pendiente de integración
+### Stock bajo
 
-- El módulo de reservas/consumo de órdenes, cuando exista, deberá emitir a **este mismo** publicador *después* de su propio commit. Este módulo **no** escribe ni altera reservas.
-- Cambios SQL realizados directamente en MySQL no generan automáticamente eventos Java. Para refrescar, consultar el reporte de nuevo.
-- La consulta del reporte usa varios accesos de solo lectura a MySQL, por lo que no es una foto atómica frente a escrituras concurrentes; si se exige consistencia instantánea, habrá que diseñar un snapshot transaccional.
-- Prueba unitaria con fixtures de memoria `AlertasInventarioServiceTest`, más `ObserverIntegracionTest` con MySQL disponible. Las pruebas de integración se omiten si MySQL no está accesible.
+Se genera si `disponibleUtilizable < stockMinimo`.
+La cantidad disponible utilizable tiene en cuenta las reservas activas y excluye lotes vencidos.
 
-## Validación local
+Ejemplo: si hay 10 unidades utilizables y el minimo es 12, aparece la alerta.
+
+### Caducidad proxima
+
+Se genera cuando un lote:
+
+- Tiene fecha de caducidad.
+- Tiene al menos una unidad fisica.
+- No esta vencido.
+- Vence hoy o dentro del numero de dias definido (`diasAviso`).
+
+Si `diasAviso` es 7, se consideran las fechas desde hoy hasta dentro de 7 dias, inclusive.
+Un lote sin caducidad no genera esta alerta; uno ya vencido tampoco cuenta como 'proximo'.
+La fecha de hoy se proporciona con `Supplier<LocalDate>` para poder hacer pruebas estables.
+
+## 5. Consultas y reporte
+
+- `consultarAlertas()`: calcula la lista actual.
+- `ultimasAlertas()`: devuelve la ultima lista calculada.
+- `reporteConsola()`: devuelve un texto que se puede imprimir con `System.out.println`.
+
+El reporte se vuelve a calcular al consultarlo, aunque no se haya recibido un evento.
+Los eventos se mantienen en memoria; no son mensajes persistentes.
+
+## 6. Como probar
 
 ```bash
 mvn -Dtest=AlertasInventarioServiceTest test
 mvn -Dtest=ObserverIntegracionTest test
 mvn test
 ```
+
+Las pruebas unitarias usan listas en memoria. No utilizan `Proxy.newProxyInstance()`.
+La prueba de integracion requiere MySQL; si no se puede conectar, se omite.
+Comprobar en IntelliJ que aparezca 'passed' y NO 'skipped'.
+
+## 7. Limites y decisiones
+
+- El modulo no modifica stock ni reservas. Eso corresponde a otros modulos.
+- Un SQL ejecutado directamente en MySQL no genera un evento Observer de Java.
+- En el futuro, el modulo de ordenes debera publicar sus cambios DESPUES de confirmar su transaccion.
+- Si un observador falla, se informa por la consola de errores y los siguientes siguen siendo notificados.
+- El codigo prioriza `if`, `for` y metodos separados, aunque ocupe mas lineas.
+
+## 8. Como leer el codigo (orden recomendado)
+
+1. `modelo/RepuestoMinimo.java`: modelo con `private`, constructor y getters.
+2. `modelo/AlertaInventario.java`: modelo con constructor, getters y `toString()`.
+3. `servicio/ObservadorInventario.java`: interfaz del observador.
+4. `servicio/PublicadorInventario.java`: suscribe, desuscribe y avisa a los observadores.
+5. `dao/AlertasDAO.java` y `dao/AlertasDAOJdbc.java`: leen minimos de MySQL.
+6. `servicio/AlertasInventarioService.java`: aplica reglas de stock y caducidad.
+7. `controlador/AlertasInventarioController.java`: solicita el reporte para la consola.
+8. `servicio/LoteService.java` y `servicio/RepuestoService.java`: publican despues de confirmar.
+9. Pruebas: simulan casos y verifican las reglas.
+
+**Recorrido:** servicios de lotes/repuestos -> commit -> publicador -> observador
+-> consultas DAO y ExistenciasService -> lista de alertas -> controlador -> consola.
+
+Los modelos `AlertaInventario` y `RepuestoMinimo` ya NO usan `record`.
+El modulo previo de existencias conserva sus propios tipos (`StockLote`, `StockRepuesto`).

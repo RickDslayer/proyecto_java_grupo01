@@ -18,7 +18,7 @@ public class PublicadorInventario {
     public void publicar(int repuestoId) {
         for (ObservadorInventario observador : observadores) {
             try {
-                observador.actualizar(repuestoId);
+                observador.inventarioCambio(repuestoId);
             } catch (RuntimeException e) {
                 System.err.println("No se pudo actualizar un observador de inventario para el repuesto #"
                         + repuestoId + ". El movimiento ya fue confirmado.");
