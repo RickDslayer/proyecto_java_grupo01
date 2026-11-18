@@ -45,3 +45,23 @@ registradas, incluidas las de técnicos inactivos, e incluye al técnico aunque
 su asignación tenga cero horas registradas.
 
 El fixture propio se verifica con `mvn -Dtest=ProductividadTecnicosStrategyTest test`.
+
+## Reporte de consumo de repuestos
+
+`ConsumoRepuestosStrategy` implementa `ReporteStrategy` con el tipo
+`CONSUMO_REPUESTOS`. Para integrarla con el módulo de reportes:
+
+```java
+ReporteStrategy estrategia = new ConsumoRepuestosStrategy();
+ReporteDTO reporte = estrategia.generar(new FiltroReporte(
+        LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30), OrdenReporte.CANTIDAD_DESC));
+```
+
+Se suman las unidades de cada reserva en estado `CONSUMIDA` según su
+`fecha_consumo`, con ambos días incluidos. Las reservas activas, liberadas
+o sin fecha de consumo quedan fuera. Si un repuesto se consume desde varios
+lotes, se acumulan las unidades de todas sus reservas consumidas. Cada fila
+identifica el repuesto por su ID y usa el orden del filtro. En un empate de
+cantidad se ordena por nombre y luego por código.
+
+El fixture independiente se verifica con `mvn -Dtest=ConsumoRepuestosStrategyTest test`.
