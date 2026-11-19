@@ -15,7 +15,7 @@ class RecorridoIntegradoTest {
         RecorridoIntegrado.Resultado r=RecorridoIntegrado.ejecutar();
         assertEquals("Entregado",r.estadoFinal());
         assertEquals(10,r.stockInicial());assertEquals(6,r.stockFinal());
-        assertEquals(0,new BigDecimal("12400.00").compareTo(r.totalFactura()));
+        assertEquals(0,new BigDecimal("14756.00").compareTo(r.totalFactura()));
         assertTrue(r.rollbackFacturaVerificado());assertEquals(9,r.pasos().size());
     }
 }

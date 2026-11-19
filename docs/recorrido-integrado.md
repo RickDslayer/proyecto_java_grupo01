@@ -7,10 +7,10 @@ El recorrido prueba servicios/DAO reales sobre MySQL, usando los contratos ya
 acordados. Se conservan las pruebas transaccionales y concurrentes de las tareas
 anteriores, en lugar de duplicarlas.
 
-La facturación final todavía no está integrada: FacturacionJdbcDePrueba vive
-exclusivamente en src/test/java. Inserta una factura de fixture en la Connection
-recibida, con impuesto cero solo para la prueba, y puede fallar tras insertarla.
-NO es el módulo final, no fija el impuesto del taller y no exporta TXT.
+El recorrido usa `FacturacionService` con tasa de fixture de 19 %. Para probar
+el rollback se inyecta un fallo de commit después de insertar la factura y
+actualizar el estado en MySQL. La tasa definitiva y la exportación TXT quedan
+fuera de este recorrido.
 
 El catálogo de operaciones usa un detalle de mano de obra de fixture. El proveedor
 se consulta mediante un doble del puerto ProveedorConsulta con ID conocido en
@@ -68,10 +68,12 @@ El argumento explícito --ejecutar evita crear fixtures al solicitar solo ayuda.
 7. Reservar cuatro unidades de diez: físico 10, reservas 4, disponible 6.
 8. Iniciar y completar: físico 6, reservas activas 0, estado Completado.
 9. Repetir completar: rechazo y ningún descuento adicional.
-10. Insertar factura con el DOBLE y provocar error: rollback; factura ausente,
+10. Insertar la factura, actualizar el estado y provocar un fallo de commit: rollback; factura ausente,
     estado Completado y stock 6.
-11. Reintentar facturación de prueba: factura única de 12400.00 = 400.00 de piezas
-    más 12000.00 de mano de obra, sin impuesto de fixture.
+11. Lanzar dos intentos concurrentes: uno confirma una factura de 14756.00
+    (400.00 de repuestos históricos, 12000.00 de mano de obra y 2356.00 de impuesto).
+    El otro intento se rechaza. El precio vigente del repuesto se cambió antes
+    de facturar para comprobar que se conserva el precio histórico.
 12. Repetir facturar: rechazo, sin nueva factura ni consumo de inventario.
 13. Entregar: estado Entregado y fecha_entrega persistidos.
 14. Eliminar únicamente los fixtures propios en orden de FK, incluso si falla
@@ -80,7 +82,7 @@ El argumento explícito --ejecutar evita crear fixtures al solicitar solo ayuda.
 Salida resumida verificada:
 
 ```text
-RESULTADO: Entregado | stock 10 → 6 | factura de prueba 12400.00
+RESULTADO: Entregado | stock 10 → 6 | factura de prueba 14756.00
 ```
 
 ## Matriz de comprobaciones
@@ -94,12 +96,12 @@ RESULTADO: Entregado | stock 10 → 6 | factura de prueba 12400.00
 | Estados inválidos/repetidos se rechazan | TransicionesOrdenServiceTest y recorrido real |
 | Asignaciones N:M, duplicados y cerradas | AsignacionTecnicoServiceTest + ServicioTecnicoDAOJdbcIntegracionTest |
 | Conexión del llamador y rollback JDBC | Pruebas DAO de técnicos, órdenes y asignaciones |
-| Factura fallida revierte factura y estado | RecorridoIntegradoTest, con doble JDBC identificado |
+| Fallo de commit revierte factura y estado; dos intentos dejan una factura | RecorridoIntegradoTest en MySQL |
 | Cliente/vehículo/orden son coherentes | RecorridoIntegradoTest |
 | Precio y mano de obra históricos | ReservasOrdenIntegracionTest + OrdenServicioDAOJdbcIntegracionTest |
 | Observadores se notifican tras commit | ObserverIntegracionTest + pruebas de reservas/transiciones |
 
-## Ejecución comprobada el 17 de noviembre de 2026
+## Ejecución histórica del 17 de noviembre de 2026 con el doble de facturación
 
 Entorno: JDK 17, Maven 3.9.9, MySQL 8.4 en contenedor temporal aislado.
 
@@ -117,9 +119,7 @@ una ejecución con omitidas NO equivale a esta validación real.
 
 ## Pendientes para validar el producto completo
 
-- Sustituir FacturacionJdbcDePrueba por la implementación real de FacturacionOrden,
-  con reglas tributarias acordadas, redondeo y exportación TXT. Repetir entonces
-  los casos de factura/rollback y agregar comprobación del archivo.
+- Confirmar la tasa tributaria definitiva e incorporar la exportación TXT con sus comprobaciones.
 - Sustituir el proveedor de fixture por el servicio real cuando esté integrado.
 - Incorporar registro real de operaciones del catálogo en lugar del detalle de fixture.
 - Integrar Main, vistas y navegación final y repetir la demostración con entrada
