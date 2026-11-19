@@ -431,3 +431,22 @@ CREATE TABLE evaluaciones_proveedor (
     CHECK (calificacion_puntualidad BETWEEN 1 AND 5),
   INDEX idx_evaluaciones_proveedor_fecha (proveedor_id, fecha_evaluacion)
 ) ENGINE=InnoDB;
+
+-- creacion del usuario y permisos
+
+CREATE USER IF NOT EXISTS 'carmotors_admin'@'localhost'
+  IDENTIFIED BY 'CambiarEstaClave123!';
+
+-- Si ya existía, dejar la clave actualizada
+ALTER USER 'carmotors_admin'@'localhost'
+  IDENTIFIED BY 'CambiarEstaClave123!';
+
+-- -----------------------------------------------------------------------------
+-- administrador solo de las bases del proyecto
+-- -----------------------------------------------------------------------------
+GRANT ALL PRIVILEGES ON carmotors_test.* TO 'carmotors_admin'@'localhost';
+
+FLUSH PRIVILEGES;
+
+-- Comprobar lo que quedó asignado
+SHOW GRANTS FOR 'carmotors_admin'@'localhost';

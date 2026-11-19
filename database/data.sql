@@ -1,6 +1,6 @@
 -- =============================================================================
 -- CarMotors - Sistema de Gestión de Taller (SGT)
--- database/data.sql  |  Datos iniciales y de ejemplo para carmotors_test
+-- database/data.sql  |  Datos iniciales para carmotors_test
 -- =============================================================================
 --
 -- USO (siempre en este orden)
@@ -8,9 +8,6 @@
 --   database/data.sql
 --
 --
--- DATOS FICTICIOS
---   Nombres, documentos, teléfonos, placas, correos (@example.com) y empresas
---   son inventados. Ninguna persona ni empresa real.
 --
 -- FECHA DE REFERENCIA: 2026-11-13
 --   "Hoy" para todos los ejemplos es el 2026-11-13. Las consultas deben usar esa
@@ -64,9 +61,9 @@ SET NAMES utf8mb4;
 
 -- Cinco estados exactos del servicio (ver PENDIENTE en el encabezado)
 INSERT INTO servicio_estados (id, nombre) VALUES
-  (1, 'Recibido'),
-  (2, 'En diagnóstico'),
-  (3, 'En reparación'),
+  (1, 'Pendiente'),
+  (2, 'En Proceso'),
+  (3, 'Facturado'),
   (4, 'Completado'),
   (5, 'Entregado');
 
@@ -199,7 +196,7 @@ INSERT INTO proveedores_repuestos (proveedor_id, repuesto_id, costo) VALUES
 
 -- =============================================================================
 -- ETAPA 4: Servicios, operaciones realizadas y técnicos asignados
--- Estados: 1 Recibido, 2 En diagnóstico, 3 En reparación, 4 Completado, 5 Entregado
+-- Estados: 1 Pendiente, 2 En Proceso, 3 Facturado, 4 Completado, 5 Entregado
 -- Tipos:   1 Preventivo, 2 Correctivo
 -- =============================================================================
 
@@ -208,11 +205,11 @@ INSERT INTO servicios (id, vehiculo_id, mantenimiento_tipo_id, estado_id,
   (1,  1,  1, 5, '2026-10-05 08:00:00', '2026-10-05 15:00:00', '2026-10-06 09:00:00', 'Mantenimiento de los 10.000 km'),
   (2,  2,  2, 5, '2026-10-08 09:00:00', '2026-10-09 16:00:00', '2026-10-10 09:30:00', 'Ruido y vibración al frenar'),
   (3,  3,  1, 4, '2026-11-09 08:30:00', '2026-11-10 14:00:00', NULL,                  'Cambio de aceite y bujías por kilometraje'),
-  (4,  4,  2, 3, '2026-11-11 09:00:00', NULL,                  NULL,                  'Golpes en la suspensión delantera'),
+  (4,  4,  2, 2, '2026-11-11 09:00:00', NULL,                  NULL,                  'Golpes en la suspensión delantera'),
   (5,  5,  2, 5, '2026-10-14 08:00:00', '2026-10-16 17:00:00', '2026-10-17 10:30:00', 'Suspensión delantera desgastada'),
   (6,  6,  1, 2, '2026-11-12 10:00:00', NULL,                  NULL,                  'Testigo de revisión del motor encendido'),
   (7,  7,  2, 1, '2026-11-13 08:00:00', NULL,                  NULL,                  'No enciende en las mañanas'),
-  (8,  8,  1, 3, '2026-11-12 07:30:00', NULL,                  NULL,                  'Mantenimiento programado de flota'),
+  (8,  8,  1, 2, '2026-11-12 07:30:00', NULL,                  NULL,                  'Mantenimiento programado de flota'),
   (9,  9,  2, 5, '2026-10-22 08:00:00', '2026-10-23 16:00:00', '2026-10-24 08:30:00', 'Frenos sin respuesta'),
   (10, 10, 2, 5, '2026-10-27 08:00:00', '2026-10-27 15:00:00', '2026-10-28 08:30:00', 'La batería no retiene carga');
 
