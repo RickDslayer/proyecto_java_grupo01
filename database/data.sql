@@ -1,6 +1,6 @@
 -- =============================================================================
 -- CarMotors - Sistema de Gestión de Taller (SGT)
--- database/data.sql  |  Datos iniciales y de ejemplo para carmotors_test
+-- database/data.sql  |  Datos iniciales para carmotors_test
 -- =============================================================================
 --
 -- USO (siempre en este orden)
@@ -8,9 +8,6 @@
 --   database/data.sql
 --
 --
--- DATOS FICTICIOS
---   Nombres, documentos, teléfonos, placas, correos (@example.com) y empresas
---   son inventados. Ninguna persona ni empresa real.
 --
 -- FECHA DE REFERENCIA: 2026-11-13
 --   "Hoy" para todos los ejemplos es el 2026-11-13. Las consultas deben usar esa
