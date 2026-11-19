@@ -212,7 +212,7 @@ DELETE FROM repuestos WHERE id = ?
 
 ## 7. Cómo probar
 
-Requisitos: MySQL encendido con `Usuario.sql`, `schema.sql` y `data.sql` cargados.
+Requisitos: MySQL encendido con `schema.sql` y `data.sql` cargados.
 
 ```sh
 mvn test

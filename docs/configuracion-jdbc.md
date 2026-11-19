@@ -15,12 +15,11 @@ mysql -u root -p
 En el cliente (compatible también con Windows):
 
 ```sql
-SOURCE database/Usuario.sql;
 SOURCE database/schema.sql;
 ```
 
-`Usuario.sql` procede de la rama de datos de prueba y crea `carmotors_admin` para
-`localhost`. `schema.sql` procede de la rama del esquema y crea `carmotors_test`.
+`schema.sql` crea `carmotors_test` y, al final, el usuario `carmotors_admin`
+para `localhost` con sus permisos. Debe ejecutarse con un usuario administrador.
 **Volver a ejecutar schema.sql borra y recrea esa base**, por lo que debe usarse
 solo al preparar/reinicializar datos locales. No lo ejecuta ConexionFactory.
 El script de datos no está incluido en esta tarea; cargarlo cuando se integre.
@@ -28,7 +27,7 @@ El script de datos no está incluido en esta tarea; cargarlo cuando se integre.
 ## Configuración en código
 
 `ConexionFactory.java` contiene las constantes `URL`, `USUARIO` y `CLAVE`.
-Se usa directamente el usuario y la contraseña de `database/Usuario.sql`.
+Se usa directamente el usuario y la contraseña de `database/schema.sql`.
 La base es `carmotors_test`, exactamente como `CREATE DATABASE` y `USE`
 en `database/schema.sql`; el servidor es localhost:3306 en cada equipo.
 No se usan variables de entorno, propiedades JVM ni archivos properties.

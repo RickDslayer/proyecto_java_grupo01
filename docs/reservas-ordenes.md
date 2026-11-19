@@ -101,4 +101,4 @@ Si no hay servidor, las pruebas de integración se omiten explícitamente.
 En esta sesión se ejecutaron en un contenedor MySQL 8.4 temporal, aislado del
 repositorio y de cualquier base de los compañeros. No se versiona infraestructura
 ni configuración de contenedor. La adaptación del host del usuario dentro de ese
-contenedor es exclusiva de pruebas, no modifica Usuario.sql.
+contenedor es exclusiva de pruebas, no modifica schema.sql.

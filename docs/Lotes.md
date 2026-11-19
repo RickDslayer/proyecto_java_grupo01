@@ -243,7 +243,7 @@ El servicio acepta lotes con varias líneas; el controlador registra uno con un 
 
 ## 8. Cómo probar
 
-Requisitos: MySQL encendido con `Usuario.sql`, `schema.sql` y `data.sql` cargados.
+Requisitos: MySQL encendido con `schema.sql` y `data.sql` cargados.
 
 ```sh
 mvn test
