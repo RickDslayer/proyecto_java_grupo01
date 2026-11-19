@@ -84,3 +84,16 @@ subtotal y el impuesto redondeado.
 El calculador devuelve el detalle y los totales. La persistencia y el cambio
 de estado pertenecen al flujo de facturación del taller. El doble en memoria
 del puerto se ejecuta con `mvn -Dtest=CalculadorFacturaTest test`.
+
+## Persistencia de factura y transición de la orden
+
+Inyecta `new FacturacionService(tasaImpuesto)` como `FacturacionOrden` en el
+constructor completo de `OrdenServicioService`. La operación pública sigue
+siendo `facturarOrden(id)`. Bloquea la orden, exige estado Completado, inserta
+la factura y actualiza a Facturado en una conexión y una transacción. El
+esquema existente protege la unicidad por `facturas.servicio_id`. El descuento
+de reservas ocurre durante `completarOrden`.
+
+El recorrido en MySQL usa una tasa de fixture de 19 %. La tasa de operación
+sigue pendiente de confirmación. Para repetirlo con `schema.sql` y `data.sql`
+cargados en MySQL local, ejecuta `mvn -Dtest=RecorridoIntegradoTest test`.
