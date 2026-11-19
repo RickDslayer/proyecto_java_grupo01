@@ -86,9 +86,10 @@ public final class RecorridoIntegrado {
             exigir(orden.getClienteId()==clienteId && orden.getEstado().equals("Pendiente"),"Alta de orden inválida");
             pasos.add("OK orden Pendiente con vehículo y cliente correctos");
             AsignacionTecnicoService asignaciones=new AsignacionTecnicoService(new ServicioTecnicoDAOFactory(),conexiones);
-            asignaciones.asignar(ordenId,tecnicoId);asignaciones.registrarHoras(ordenId,tecnicoId,new BigDecimal("2.50"));
+            asignaciones.asignar(ordenId,tecnicoId);asignaciones.registrarTiempo(ordenId,tecnicoId,"02:30");
             exigir(asignaciones.listarPorOrden(ordenId).size()==1,"Falta el responsable de la orden");
-            pasos.add("OK técnico asignado y 2.50 horas registradas");
+            exigir(asignaciones.listarPorOrden(ordenId).get(0).estadoOrden().equals("En Proceso"),"Asignar debe iniciar la orden");
+            pasos.add("OK técnico asignado, orden En Proceso y 02:30 horas registradas");
             // Fixture de mano de obra: registrar operaciones del catálogo todavía no tiene servicio propio.
             try(Connection con=conexiones.get()) {sql(con,"INSERT INTO servicios_detalle(servicio_id,servicio_catalogo_id,precio_cobrado) VALUES(?,1,12000.00)",ordenId);}
             reservas.reservar(ordenId,repuestoId,4);
@@ -96,7 +97,7 @@ public final class RecorridoIntegrado {
             StockRepuesto reservado=stock.resumen(repuestoId);
             exigir(reservado.fisico()==10 && reservado.reservadoActivo()==4 && reservado.disponible()==6,"La reserva alteró el stock físico");
             pasos.add("OK reserva: físico 10, reservado 4, disponible 6");
-            ordenes.iniciarOrden(ordenId);ordenes.completarOrden(ordenId);
+            ordenes.completarOrden(ordenId);
             StockRepuesto consumido=stock.resumen(repuestoId);
             exigir(consumido.fisico()==6 && consumido.reservadoActivo()==0,"Consumo inconsistente");
             esperarValidacion(()->ordenes.completarOrden(idOrden));

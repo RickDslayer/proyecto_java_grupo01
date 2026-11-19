@@ -36,7 +36,25 @@ class ServicioTecnicoDAOJdbcIntegracionTest {
                 ServicioTecnicoDAO dao = new ServicioTecnicoDAOFactory().obtenerDAO();
                 assertEquals("Pendiente",dao.bloquearEstadoOrden(con,orden).orElseThrow());
                 assertTrue(dao.bloquearTecnicoActivo(con,tecnico).orElseThrow());
+                assertTrue(dao.listarSinOrdenesAbiertas(con).stream().anyMatch(f -> f.tecnicoId() == tecnico));
                 dao.asignar(con,orden,tecnico);
+                assertFalse(dao.listarSinOrdenesAbiertas(con).stream().anyMatch(f -> f.tecnicoId() == tecnico));
+                assertTrue(dao.listarCargaEnProceso(con).stream().noneMatch(f -> f.tecnicoId() == tecnico));
+                try (PreparedStatement ps = con.prepareStatement("UPDATE servicios SET estado_id = (SELECT id FROM servicio_estados WHERE nombre = ?) WHERE id = ?")) {
+                    ps.setString(1, "En Proceso"); ps.setInt(2, orden); ps.executeUpdate();
+                    assertEquals(1, dao.listarCargaEnProceso(con).stream().filter(f -> f.tecnicoId() == tecnico).findFirst().orElseThrow().ordenesEnProceso());
+                    ps.setString(1, "Completado"); ps.executeUpdate();
+                    assertTrue(dao.listarSinOrdenesAbiertas(con).stream().anyMatch(f -> f.tecnicoId() == tecnico));
+                    assertTrue(dao.listarCargaEnProceso(con).stream().noneMatch(f -> f.tecnicoId() == tecnico));
+                }
+                try (PreparedStatement ps = con.prepareStatement("UPDATE servicios SET estado_id = (SELECT id FROM servicio_estados WHERE nombre = 'Pendiente') WHERE id = ?")) {
+                    ps.setInt(1, orden); ps.executeUpdate();
+                }
+                dao.iniciarOrden(con, orden);
+                assertEquals("En Proceso", dao.bloquearEstadoOrden(con, orden).orElseThrow());
+                dao.iniciarOrden(con, orden);
+                assertEquals("En Proceso", dao.bloquearEstadoOrden(con, orden).orElseThrow());
+                assertEquals(new BigDecimal("0.00"), dao.bloquearHoras(con, orden, tecnico).orElseThrow());
                 assertThrows(DaoException.class, () -> dao.asignar(con,orden,tecnico));
                 assertTrue(dao.existe(con,orden,tecnico));
                 dao.actualizarHoras(con,orden,tecnico,new BigDecimal("2.75"));
