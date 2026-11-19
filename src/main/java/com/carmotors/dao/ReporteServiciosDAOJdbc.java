@@ -12,7 +12,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ReporteServiciosDAOJdbc {
+public class ReporteServiciosDAOJdbc implements ReporteServiciosDAO {
     private static final String CONSULTAR_SOLICITUDES = """
             SELECT orden.id, tipo.nombre, orden.fecha_recepcion
             FROM servicios orden
@@ -22,6 +22,7 @@ public class ReporteServiciosDAOJdbc {
     // MySQL admite hasta seis dígitos de precisión en DATETIME.
     private static final LocalTime FIN_DEL_DIA = LocalTime.of(23, 59, 59, 999_999_000);
 
+    @Override
     public List<SolicitudServicioReporteDato> listarSolicitudes(Connection conexion, FiltroReporte filtro) {
         try (PreparedStatement sentencia = conexion.prepareStatement(CONSULTAR_SOLICITUDES)) {
             sentencia.setObject(1, filtro.fechaInicio().atStartOfDay());

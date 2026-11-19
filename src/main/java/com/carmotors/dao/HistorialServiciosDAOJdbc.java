@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class HistorialServiciosDAOJdbc {
+public class HistorialServiciosDAOJdbc implements HistorialServiciosDAO {
 
     private static final String SQL = """
             SELECT
@@ -48,6 +48,7 @@ public class HistorialServiciosDAOJdbc {
                 d.servicio_catalogo_id
             """;
 
+    @Override
     public List<ServicioHistorial> listarPorVehiculo(
             Connection conexion,
             int vehiculoId) {

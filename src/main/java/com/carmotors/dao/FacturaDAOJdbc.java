@@ -14,7 +14,8 @@ import java.util.List;
 import java.util.Optional;
 
 /** Consultas y escritura de factura en la conexión transaccional del llamador. */
-public final class FacturaDAOJdbc {
+public final class FacturaDAOJdbc implements FacturaDAO {
+    @Override
     public Optional<DatosOrdenParaFactura> buscarOrdenCompletada(Connection con, long ordenId) {
         String estado = """
                 SELECT estado.nombre
@@ -74,6 +75,7 @@ public final class FacturaDAOJdbc {
         return detalle;
     }
 
+    @Override
     public void insertar(Connection con, FacturaDTO factura, LocalDateTime fechaEmision) {
         String sql = """
                 INSERT INTO facturas (servicio_id, fecha_emision, total_repuestos,

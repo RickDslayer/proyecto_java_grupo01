@@ -76,7 +76,7 @@ Se construye con `RepuestoService(RepuestoDAO dao, ProveedorConsulta proveedores
 En producción la conexión sale de `ConexionFactory`:
 
 ```java
-new RepuestoService(new RepuestoDAOJdbc(), new ProveedorConsultaMemoria(),
+new RepuestoService(new RepuestoDAOFactory().obtenerDAO(), new ProveedorConsultaMemoria(),
         () -> ConexionFactory.getInstancia().crearConexion());
 ```
 

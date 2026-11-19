@@ -1,19 +1,26 @@
 package com.carmotors.servicio;
 
-import com.carmotors.dao.FacturaDAOJdbc;
+import com.carmotors.dao.FacturaDAO;
+import com.carmotors.dao.factory.FacturaDAOFactory;
 import com.carmotors.excepcion.DaoException;
 import com.carmotors.excepcion.ValidacionException;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /** Calcula y guarda con la conexión de la transición a Facturado. */
 public final class FacturacionService implements FacturacionOrden {
-    private final FacturaDAOJdbc dao = new FacturaDAOJdbc();
+    private final FacturaDAO dao;
     private final BigDecimal tasaImpuesto;
 
     public FacturacionService(BigDecimal tasaImpuesto) {
+        this(new FacturaDAOFactory().obtenerDAO(), tasaImpuesto);
+    }
+
+    public FacturacionService(FacturaDAO dao, BigDecimal tasaImpuesto) {
+        this.dao = Objects.requireNonNull(dao, "El DAO de facturación es obligatorio.");
         this.tasaImpuesto = CalculadorFactura.validarTasa(tasaImpuesto);
     }
 

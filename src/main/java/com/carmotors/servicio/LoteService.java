@@ -33,7 +33,7 @@ public class LoteService {
     private final PublicadorInventario publicador;
 
     /**
-     * En producción: new LoteService(new LoteDAOJdbc(), proveedores,
+     * En producción: new LoteService(new LoteDAOFactory().obtenerDAO(), proveedores,
      *     () -> ConexionFactory.getInstancia().crearConexion(), LocalDate::now)
      * En pruebas, "hoy" se fija: () -> LocalDate.of(2026, 11, 13)
      */

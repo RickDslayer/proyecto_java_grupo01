@@ -2,7 +2,7 @@
 package com.carmotors.servicio;
 
 import com.carmotors.config.ConexionFactory;
-import com.carmotors.dao.HistorialServiciosDAOJdbc;
+import com.carmotors.dao.HistorialServiciosDAO;
 import com.carmotors.excepcion.AccesoDatosException;
 import com.carmotors.modelo.ServicioHistorial;
 
@@ -10,15 +10,23 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 public class HistorialServiciosConsultaJdbc
         implements HistorialServiciosConsulta {
 
-    private final HistorialServiciosDAOJdbc historialDAO;
+    private final HistorialServiciosDAO historialDAO;
+    private final Supplier<Connection> conexiones;
 
     public HistorialServiciosConsultaJdbc(
-            HistorialServiciosDAOJdbc historialDAO) {
+            HistorialServiciosDAO historialDAO) {
 
+        this(historialDAO, () -> ConexionFactory.getInstancia().crearConexion());
+    }
+
+    public HistorialServiciosConsultaJdbc(HistorialServiciosDAO historialDAO,
+                                         Supplier<Connection> conexiones) {
+        this.conexiones = Objects.requireNonNull(conexiones, "El proveedor de conexiones es obligatorio");
         this.historialDAO = Objects.requireNonNull(
                 historialDAO,
                 "El DAO de historial es obligatorio"
@@ -36,7 +44,7 @@ public class HistorialServiciosConsultaJdbc
         }
 
         try (Connection conexion =
-                     ConexionFactory.getInstancia().crearConexion()) {
+                     conexiones.get()) {
 
             return historialDAO.listarPorVehiculo(
                     conexion,

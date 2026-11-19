@@ -24,7 +24,7 @@ public class RepuestoService {
     private final Supplier<Connection> conexiones;
     private final PublicadorInventario publicador;
 
-    /** En producción: new RepuestoService(new RepuestoDAOJdbc(), proveedores, () -> ConexionFactory.getInstancia().crearConexion()) */
+    /** En producción: new RepuestoService(new RepuestoDAOFactory().obtenerDAO(), proveedores, () -> ConexionFactory.getInstancia().crearConexion()) */
     public RepuestoService(RepuestoDAO dao, ProveedorConsulta proveedores, Supplier<Connection> conexiones) {
         this(dao, proveedores, conexiones, new PublicadorInventario());
     }

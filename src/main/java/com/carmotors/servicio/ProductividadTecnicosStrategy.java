@@ -2,7 +2,7 @@ package com.carmotors.servicio;
 
 import com.carmotors.config.ConexionFactory;
 import com.carmotors.dao.ParticipacionesTecnicosDAO;
-import com.carmotors.dao.ParticipacionesTecnicosDAOJdbc;
+import com.carmotors.dao.factory.ParticipacionesTecnicosDAOFactory;
 import com.carmotors.excepcion.DaoException;
 import com.carmotors.modelo.FilaReporteDTO;
 import com.carmotors.modelo.FiltroReporte;
@@ -19,7 +19,7 @@ public class ProductividadTecnicosStrategy implements ReporteStrategy {
     private final Supplier<Connection> abrirConexion;
 
     public ProductividadTecnicosStrategy() {
-        this(new ParticipacionesTecnicosDAOJdbc(), ConexionFactory.getInstancia()::crearConexion);
+        this(new ParticipacionesTecnicosDAOFactory().obtenerDAO(), ConexionFactory.getInstancia()::crearConexion);
     }
 
     ProductividadTecnicosStrategy(ParticipacionesTecnicosDAO asignaciones, Supplier<Connection> abrirConexion) {

@@ -2,7 +2,7 @@ package com.carmotors.vista;
 
 import com.carmotors.config.ConexionFactory;
 import com.carmotors.controlador.*;
-import com.carmotors.dao.*;
+import com.carmotors.dao.factory.*;
 import com.carmotors.servicio.*;
 import java.sql.*;
 import java.time.*;
@@ -15,12 +15,12 @@ final class ContextoInventario {
     final Supplier<LocalDate> hoy = LocalDate::now;
     final PublicadorInventario publicador = new PublicadorInventario();
     final ProveedorConsulta proveedores = new ProveedorConsultaMemoria();
-    final RepuestoTipoService tipos = new RepuestoTipoService(new RepuestoTipoDAOJdbc(), conexiones);
+    final RepuestoTipoService tipos = new RepuestoTipoService(new RepuestoTipoDAOFactory().obtenerDAO(), conexiones);
     final RepuestoTipoController tiposCtrl = new RepuestoTipoController(tipos);
-    final RepuestoService repuestos = new RepuestoService(new RepuestoDAOJdbc(), proveedores, conexiones, publicador);
-    final LoteService lotes = new LoteService(new LoteDAOJdbc(), proveedores, conexiones, hoy, publicador);
-    final ExistenciasService existencias = new ExistenciasService(new ExistenciasDAOJdbc(), conexiones, hoy);
-    final AlertasInventarioService alertas = new AlertasInventarioService(new AlertasDAOJdbc(), existencias, conexiones, hoy, 7);
+    final RepuestoService repuestos = new RepuestoService(new RepuestoDAOFactory(), proveedores, conexiones, publicador);
+    final LoteService lotes = new LoteService(new LoteDAOFactory().obtenerDAO(), proveedores, conexiones, hoy, publicador);
+    final ExistenciasService existencias = new ExistenciasService(new ExistenciasDAOFactory().obtenerDAO(), conexiones, hoy);
+    final AlertasInventarioService alertas = new AlertasInventarioService(new AlertasDAOFactory().obtenerDAO(), existencias, conexiones, hoy, 7);
     final RepuestoController repuestosCtrl = new RepuestoController(repuestos);
     final LoteController lotesCtrl = new LoteController(lotes);
     final AlertasInventarioController alertasCtrl = new AlertasInventarioController(alertas);

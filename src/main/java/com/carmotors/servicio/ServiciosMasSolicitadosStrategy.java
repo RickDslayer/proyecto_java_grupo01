@@ -1,7 +1,8 @@
 package com.carmotors.servicio;
 
 import com.carmotors.config.ConexionFactory;
-import com.carmotors.dao.ReporteServiciosDAOJdbc;
+import com.carmotors.dao.ReporteServiciosDAO;
+import com.carmotors.dao.factory.ReporteServiciosDAOFactory;
 import com.carmotors.excepcion.DaoException;
 import com.carmotors.modelo.FilaReporteDTO;
 import com.carmotors.modelo.FiltroReporte;
@@ -15,7 +16,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class ServiciosMasSolicitadosStrategy implements ReporteStrategy {
-    private final ReporteServiciosDAOJdbc dao = new ReporteServiciosDAOJdbc();
+    private final ReporteServiciosDAO dao;
     private final Supplier<Connection> abrirConexion;
 
     public ServiciosMasSolicitadosStrategy() {
@@ -23,7 +24,12 @@ public class ServiciosMasSolicitadosStrategy implements ReporteStrategy {
     }
 
     ServiciosMasSolicitadosStrategy(Supplier<Connection> abrirConexion) {
-        this.abrirConexion = abrirConexion;
+        this(new ReporteServiciosDAOFactory().obtenerDAO(), abrirConexion);
+    }
+
+    public ServiciosMasSolicitadosStrategy(ReporteServiciosDAO dao, Supplier<Connection> abrirConexion) {
+        this.dao = Objects.requireNonNull(dao, "El DAO del reporte es obligatorio.");
+        this.abrirConexion = Objects.requireNonNull(abrirConexion, "El proveedor de conexiones es obligatorio.");
     }
 
     @Override

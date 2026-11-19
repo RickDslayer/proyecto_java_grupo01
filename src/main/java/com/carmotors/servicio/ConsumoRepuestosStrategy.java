@@ -3,7 +3,7 @@ package com.carmotors.servicio;
 import com.carmotors.config.ConexionFactory;
 import com.carmotors.dao.ConsumoRepuestosDAO;
 import com.carmotors.dao.ConsumoRepuestosDAO.Consumo;
-import com.carmotors.dao.ConsumoRepuestosDAOJdbc;
+import com.carmotors.dao.factory.ConsumoRepuestosDAOFactory;
 import com.carmotors.excepcion.DaoException;
 import com.carmotors.modelo.FilaReporteDTO;
 import com.carmotors.modelo.FiltroReporte;
@@ -20,7 +20,7 @@ public class ConsumoRepuestosStrategy implements ReporteStrategy {
     private final Supplier<Connection> abrirConexion;
 
     public ConsumoRepuestosStrategy() {
-        this(new ConsumoRepuestosDAOJdbc(), ConexionFactory.getInstancia()::crearConexion);
+        this(new ConsumoRepuestosDAOFactory().obtenerDAO(), ConexionFactory.getInstancia()::crearConexion);
     }
 
     ConsumoRepuestosStrategy(ConsumoRepuestosDAO dao, Supplier<Connection> abrirConexion) {

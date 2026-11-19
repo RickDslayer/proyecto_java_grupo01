@@ -4,10 +4,10 @@ import com.carmotors.config.ConexionFactory;
 import com.carmotors.controlador.ClienteController;
 import com.carmotors.controlador.HistorialController;
 import com.carmotors.controlador.VehiculoController;
-import com.carmotors.dao.ClienteDAOJdbc;
-import com.carmotors.dao.ClienteVehiculosDAOJdbc;
-import com.carmotors.dao.HistorialServiciosDAOJdbc;
-import com.carmotors.dao.VehiculoDAOJdbc;
+import com.carmotors.dao.factory.ClienteDAOFactory;
+import com.carmotors.dao.factory.ClienteVehiculosDAOFactory;
+import com.carmotors.dao.factory.HistorialServiciosDAOFactory;
+import com.carmotors.dao.factory.VehiculoDAOFactory;
 import com.carmotors.modelo.Cliente;
 import com.carmotors.modelo.OperacionHistorial;
 import com.carmotors.modelo.RecordatorioPreventivo;
@@ -36,18 +36,18 @@ public class VistaPruebaCarMotors {
     private final HistorialController historiales;
 
     public VistaPruebaCarMotors() {
-        ClienteDAOJdbc clienteDAO = new ClienteDAOJdbc();
+        com.carmotors.dao.ClienteDAO clienteDAO = new ClienteDAOFactory().obtenerDAO();
         VehiculoService vehiculoService = new VehiculoService(
-                new VehiculoDAOJdbc(), clienteDAO);
+                new VehiculoDAOFactory().obtenerDAO(), clienteDAO);
 
         clientes = new ClienteController(new ClienteService(
-                clienteDAO, new ClienteVehiculosDAOJdbc()));
+                clienteDAO, new ClienteVehiculosDAOFactory().obtenerDAO()));
         vehiculos = new VehiculoController(vehiculoService);
 
         HistorialService historialService = new HistorialService(
                 vehiculoService,
                 new HistorialServiciosConsultaJdbc(
-                        new HistorialServiciosDAOJdbc()));
+                        new HistorialServiciosDAOFactory().obtenerDAO()));
 
         historiales = new HistorialController(
                 historialService,

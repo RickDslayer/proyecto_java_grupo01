@@ -37,7 +37,7 @@ Las 6 reservas activas son valores simulados de la fixture del DAO, no registros
 
 ```java
 ExistenciasService servicio = new ExistenciasService(
-    new ExistenciasDAOJdbc(),
+    new ExistenciasDAOFactory().obtenerDAO(),
     () -> ConexionFactory.getInstancia().crearConexion(),
     LocalDate::now
 );
