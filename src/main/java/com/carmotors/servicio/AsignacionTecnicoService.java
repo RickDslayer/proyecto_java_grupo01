@@ -5,6 +5,8 @@ import com.carmotors.dao.factory.DAOFactory;
 import com.carmotors.excepcion.DaoException;
 import com.carmotors.excepcion.ValidacionException;
 import com.carmotors.modelo.ServicioTecnico;
+import com.carmotors.modelo.CargaTecnico;
+import com.carmotors.util.TiempoTrabajo;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Connection;
@@ -34,6 +36,7 @@ public class AsignacionTecnicoService {
             if (!activo) throw new ValidacionException("El técnico está inactivo y no puede recibir asignaciones nuevas.");
             if (dao.existe(con, ordenId, tecnicoId)) throw new ValidacionException("El técnico ya está asignado a esta orden.");
             dao.asignar(con, ordenId, tecnicoId);
+            dao.iniciarOrden(con, ordenId);
             return null;
         });
     }
@@ -47,22 +50,43 @@ public class AsignacionTecnicoService {
         });
     }
 
-    /** Sustituye el total de horas, no acumula ni duplica al repetir la petición. */
+    /** Suma una duración HH:mm al tiempo existente de esta asignación. */
+    public void registrarTiempo(int ordenId, int tecnicoId, String tiempo) {
+        registrarMinutos(ordenId, tecnicoId, TiempoTrabajo.leerMinutos(tiempo));
+    }
+
+    /** Compatibilidad para consumidores internos que todavía usan horas decimales. */
     public void registrarHoras(int ordenId, int tecnicoId, BigDecimal horas) {
-        ids(ordenId, tecnicoId);
         if (horas == null || horas.signum() < 0 || horas.compareTo(new BigDecimal("999.99")) > 0) {
             throw new ValidacionException("Las horas deben estar entre 0 y 999.99.");
         }
-        BigDecimal total;
-        try { total = horas.setScale(2, RoundingMode.UNNECESSARY); }
+        try { horas.setScale(2, RoundingMode.UNNECESSARY); }
         catch (ArithmeticException e) { throw new ValidacionException("Las horas admiten como máximo dos decimales."); }
+        registrarMinutos(ordenId, tecnicoId, TiempoTrabajo.minutos(horas));
+    }
+
+    private void registrarMinutos(int ordenId, int tecnicoId, int minutosNuevos) {
+        ids(ordenId, tecnicoId);
         transaccion(con -> {
             validarReferencias(con, ordenId, tecnicoId);
-            if (!dao.existe(con, ordenId, tecnicoId)) throw new ValidacionException("El técnico no está asignado a esta orden.");
-            // MySQL puede informar cero filas modificadas si el valor ya era el mismo.
-            dao.actualizarHoras(con, ordenId, tecnicoId, total);
+            BigDecimal anteriores = dao.bloquearHoras(con, ordenId, tecnicoId)
+                    .orElseThrow(() -> new ValidacionException("El técnico no está asignado a esta orden."));
+            // Recuperar minutos antes de sumar evita acumular redondeos de centésimas de hora.
+            int totalMinutos = TiempoTrabajo.minutos(anteriores) + minutosNuevos;
+            if (totalMinutos > TiempoTrabajo.MAXIMO_MINUTOS) {
+                throw new ValidacionException("El tiempo acumulado no puede superar 999:59.");
+            }
+            dao.actualizarHoras(con, ordenId, tecnicoId, TiempoTrabajo.horas(totalMinutos));
             return null;
         });
+    }
+
+    public List<CargaTecnico> listarCargaEnProceso() {
+        return consultar(dao::listarCargaEnProceso);
+    }
+
+    public List<CargaTecnico> listarSinOrdenesAbiertas() {
+        return consultar(dao::listarSinOrdenesAbiertas);
     }
 
     public List<ServicioTecnico> listarPorOrden(int id) {

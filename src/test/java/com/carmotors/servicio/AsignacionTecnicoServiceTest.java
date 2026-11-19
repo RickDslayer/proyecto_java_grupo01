@@ -5,6 +5,7 @@ import com.carmotors.dao.ServicioTecnicoDAO;
 import com.carmotors.excepcion.DaoException;
 import com.carmotors.excepcion.ValidacionException;
 import com.carmotors.modelo.ServicioTecnico;
+import com.carmotors.modelo.CargaTecnico;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -44,6 +45,15 @@ class AsignacionTecnicoServiceTest {
         assertEquals(5, cierres);
     }
 
+    @Test void asignarIniciaOrdenYAsignacionesPosterioresConservanEstado() {
+        assertEquals("Pendiente", dao.estados.get(1));
+        servicio.asignar(1, 1);
+        assertEquals("En Proceso", dao.estados.get(1));
+        servicio.asignar(1, 2);
+        assertEquals("En Proceso", dao.estados.get(1));
+        assertEquals(2, servicio.listarPorOrden(1).size());
+    }
+
     @Test void asignacionDuplicadaNoSeRepite() {
         servicio.asignar(1, 1);
         assertThrows(ValidacionException.class, () -> servicio.asignar(1, 1));
@@ -70,11 +80,11 @@ class AsignacionTecnicoServiceTest {
         assertEquals(1, dao.filas.size()); assertEquals(9, rollbacks);
     }
 
-    @Test void horasExactasNoSeAcumulanYSePermiteQuitarInactivo() {
+    @Test void horasSeAcumulanYSePermiteQuitarInactivo() {
         servicio.asignar(1, 1);
         servicio.registrarHoras(1, 1, new BigDecimal("2.50"));
         servicio.registrarHoras(1, 1, new BigDecimal("2.50"));
-        assertEquals(new BigDecimal("2.50"), servicio.listarPorOrden(1).get(0).horasTrabajadas());
+        assertEquals(new BigDecimal("5.00"), servicio.listarPorOrden(1).get(0).horasTrabajadas());
         dao.activos.put(1, false);
         servicio.quitar(1, 1);
         assertTrue(servicio.listarPorOrden(1).isEmpty());
@@ -107,12 +117,36 @@ class AsignacionTecnicoServiceTest {
         assertTrue(controller.asignar("a", "1").startsWith("Error:"));
         assertTrue(controller.asignar("1", "1").contains("asignado"));
         assertTrue(controller.asignar("1", "1").contains("ya está asignado"));
-        assertTrue(controller.registrarHoras("1", "1", "3.25").contains("actualizadas"));
+        assertTrue(controller.registrarHoras("1", "1", "03:15").contains("actualizadas"));
         assertTrue(controller.registrarHoras("1", "1", null).startsWith("Error:"));
-        assertTrue(controller.listarPorOrden("1").contains("3.25"));
+        assertTrue(controller.listarPorOrden("1").contains("03:15"));
         assertTrue(controller.listarPorTecnico("1").contains("Orden #1"));
         assertTrue(controller.quitar("1", "1").contains("retirada"));
         assertTrue(controller.listarPorOrden("1").contains("No hay asignaciones"));
+    }
+
+    @Test void minutosSucesivosNoAcumulanRedondeosYSeValidaLimite() {
+        servicio.asignar(1, 1);
+        for (int i = 0; i < 60; i++) servicio.registrarTiempo(1, 1, "00:01");
+        assertEquals(new BigDecimal("1.00"), servicio.listarPorOrden(1).get(0).horasTrabajadas());
+        servicio.registrarTiempo(1, 1, "998:59");
+        assertThrows(ValidacionException.class, () -> servicio.registrarTiempo(1, 1, "00:01"));
+        assertEquals(new BigDecimal("999.98"), servicio.listarPorOrden(1).get(0).horasTrabajadas());
+    }
+
+    @Test void consultasDistinguenProcesoPendienteYCerrado() {
+        servicio.asignar(1, 1);
+        servicio.asignar(2, 1);
+        assertEquals(2, servicio.listarCargaEnProceso().get(0).ordenesEnProceso());
+        assertEquals(2, servicio.listarSinOrdenesAbiertas().get(0).tecnicoId());
+        AsignacionTecnicoController controller = new AsignacionTecnicoController(servicio);
+        assertTrue(controller.listarCargaEnProceso().contains("órdenes en proceso: 2"));
+        assertTrue(controller.listarSinOrdenesAbiertas().contains("Técnico #2"));
+        dao.estados.put(1, "Completado");
+        dao.estados.put(2, "Entregado");
+        assertTrue(servicio.listarCargaEnProceso().isEmpty());
+        assertTrue(controller.listarCargaEnProceso().contains("No hay técnicos"));
+        assertEquals(2, servicio.listarSinOrdenesAbiertas().size());
     }
 
     private static class Memoria implements ServicioTecnicoDAO {
@@ -123,7 +157,23 @@ class AsignacionTecnicoServiceTest {
         DaoException error;
         public Optional<String> bloquearEstadoOrden(Connection c, int id) { bloqueos.add("orden:"+id); return Optional.ofNullable(estados.get(id)); }
         public Optional<Boolean> bloquearTecnicoActivo(Connection c, int id) { bloqueos.add("tecnico:"+id); return Optional.ofNullable(activos.get(id)); }
+        public Optional<BigDecimal> bloquearHoras(Connection c, int orden, int tecnico) {
+            return Optional.ofNullable(filas.get(orden+":"+tecnico)).map(ServicioTecnico::horasTrabajadas);
+        }
+        public List<CargaTecnico> listarCargaEnProceso(Connection c) {
+            return activos.keySet().stream().map(id -> new CargaTecnico(id, "Técnico " + id, activos.get(id),
+                    filas.values().stream().filter(f -> f.tecnicoId() == id && "En Proceso".equals(estados.get(f.servicioId()))).count()))
+                    .filter(f -> f.ordenesEnProceso() > 0).toList();
+        }
+        public List<CargaTecnico> listarSinOrdenesAbiertas(Connection c) {
+            return activos.keySet().stream().filter(id -> filas.values().stream().noneMatch(f ->
+                    f.tecnicoId() == id && List.of("Pendiente", "En Proceso").contains(estados.get(f.servicioId()))))
+                    .map(id -> new CargaTecnico(id, "Técnico " + id, activos.get(id), 0)).toList();
+        }
         public boolean existe(Connection c, int orden, int tecnico) { return filas.containsKey(orden+":"+tecnico); }
+        public void iniciarOrden(Connection c, int orden) {
+            estados.put(orden, "En Proceso");
+        }
         public void asignar(Connection c, int orden, int tecnico) {
             if (error != null) throw error;
             filas.put(orden+":"+tecnico, new ServicioTecnico(orden,tecnico,"Técnico "+tecnico,estados.get(orden),new BigDecimal("0.00")));

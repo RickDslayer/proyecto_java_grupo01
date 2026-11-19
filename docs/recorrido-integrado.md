@@ -63,10 +63,10 @@ El argumento explícito --ejecutar evita crear fixtures al solicitar solo ayuda.
 2. Registrar vehículo asociado a ese cliente con VehiculoService.
 3. Registrar técnico, repuesto e ingreso de lote con sus servicios/DAO reales.
 4. Crear orden Pendiente usando el vehículo y consultar su propietario.
-5. Asignar técnico y registrar 2.50 horas.
+5. Asignar técnico: la orden pasa automáticamente a En Proceso. Registrar 02:30 horas.
 6. Preparar operación de mano de obra por 12000.00 (fixture de catálogo).
 7. Reservar cuatro unidades de diez: físico 10, reservas 4, disponible 6.
-8. Iniciar y completar: físico 6, reservas activas 0, estado Completado.
+8. Completar la orden ya iniciada: físico 6, reservas activas 0, estado Completado.
 9. Repetir completar: rechazo y ningún descuento adicional.
 10. Insertar la factura, actualizar el estado y provocar un fallo de commit: rollback; factura ausente,
     estado Completado y stock 6.

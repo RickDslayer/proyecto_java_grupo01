@@ -2,6 +2,7 @@ package com.carmotors.dao;
 
 import com.carmotors.excepcion.DaoException;
 import com.carmotors.modelo.ServicioTecnico;
+import com.carmotors.modelo.CargaTecnico;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -39,6 +40,21 @@ public class ServicioTecnicoDAOJdbc implements ServicioTecnicoDAO {
             ids(ps, servicioId, tecnicoId);
             try (ResultSet rs = ps.executeQuery()) { return rs.next(); }
         } catch (SQLException e) { throw new DaoException("No se pudo consultar la asignación.", e); }
+    }
+
+    /** Se ejecuta con la orden bloqueada y en la transacción de la asignación. */
+    @Override
+    public void iniciarOrden(Connection con, int servicioId) {
+        String sql = "UPDATE servicios s JOIN servicio_estados actual ON actual.id = s.estado_id "
+                + "JOIN servicio_estados nuevo ON nuevo.nombre = 'En Proceso' "
+                + "SET s.estado_id = nuevo.id WHERE s.id = ? AND actual.nombre = 'Pendiente'";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, servicioId);
+            int modificadas = ps.executeUpdate();
+            if (modificadas == 0 && !bloquearEstadoOrden(con, servicioId).orElse("").equals("En Proceso")) {
+                throw new DaoException("No se pudo iniciar la orden al asignar el técnico.");
+            }
+        } catch (SQLException e) { throw new DaoException("No se pudo iniciar la orden al asignar el técnico.", e); }
     }
 
     @Override
@@ -86,6 +102,47 @@ public class ServicioTecnicoDAOJdbc implements ServicioTecnicoDAO {
                 return filas;
             }
         } catch (SQLException e) { throw new DaoException("No se pudieron consultar las asignaciones.", e); }
+    }
+
+    @Override
+    public Optional<BigDecimal> bloquearHoras(Connection con, int servicioId, int tecnicoId) {
+        String sql = "SELECT horas_trabajadas FROM servicios_tecnicos WHERE servicio_id = ? AND tecnico_id = ? FOR UPDATE";
+        try (PreparedStatement ps = con.prepareStatement(sql)) {
+            ids(ps, servicioId, tecnicoId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? Optional.of(rs.getBigDecimal(1)) : Optional.empty();
+            }
+        } catch (SQLException e) { throw new DaoException("No se pudo consultar el tiempo acumulado.", e); }
+    }
+
+    @Override
+    public List<CargaTecnico> listarCargaEnProceso(Connection con) {
+        String sql = "SELECT t.id, t.nombre, t.activo, COUNT(*) AS cantidad "
+                + "FROM tecnicos t JOIN servicios_tecnicos st ON st.tecnico_id = t.id "
+                + "JOIN servicios s ON s.id = st.servicio_id JOIN servicio_estados e ON e.id = s.estado_id "
+                + "WHERE e.nombre = 'En Proceso' GROUP BY t.id, t.nombre, t.activo "
+                + "ORDER BY cantidad DESC, t.nombre, t.id";
+        return consultarCarga(con, sql);
+    }
+
+    @Override
+    public List<CargaTecnico> listarSinOrdenesAbiertas(Connection con) {
+        String sql = "SELECT t.id, t.nombre, t.activo, 0 AS cantidad FROM tecnicos t WHERE NOT EXISTS ("
+                + "SELECT 1 FROM servicios_tecnicos st JOIN servicios s ON s.id = st.servicio_id "
+                + "JOIN servicio_estados e ON e.id = s.estado_id WHERE st.tecnico_id = t.id "
+                + "AND e.nombre IN ('Pendiente', 'En Proceso')) ORDER BY t.nombre, t.id";
+        return consultarCarga(con, sql);
+    }
+
+    private List<CargaTecnico> consultarCarga(Connection con, String sql) {
+        try (PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            List<CargaTecnico> filas = new ArrayList<>();
+            while (rs.next()) {
+                filas.add(new CargaTecnico(rs.getInt("id"), rs.getString("nombre"),
+                        rs.getBoolean("activo"), rs.getLong("cantidad")));
+            }
+            return filas;
+        } catch (SQLException e) { throw new DaoException("No se pudo consultar la carga de técnicos.", e); }
     }
 
     private void ids(PreparedStatement ps, int servicioId, int tecnicoId) throws SQLException {
