@@ -1,4 +1,4 @@
-package com.carmotors.vista;
+package com.carmotors;
 
 import com.carmotors.modelo.Lote;
 import com.carmotors.modelo.LoteLinea;

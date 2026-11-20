@@ -6,7 +6,7 @@ Con [MySQL local configurado](docs/configuracion-jdbc.md) y los datos de
 `database/data.sql` cargados, ejecuta desde la raíz del proyecto:
 
 ```sh
-mvn compile exec:java -Dexec.mainClass=com.carmotors.vista.ReporteServiciosConsola -Dexec.args="2026-11-01 2026-11-30"
+mvn compile exec:java -Dexec.mainClass=com.carmotors.ReporteServiciosConsola -Dexec.args="2026-11-01 2026-11-30"
 ```
 
 El reporte cuenta las órdenes por tipo de mantenimiento según su fecha de

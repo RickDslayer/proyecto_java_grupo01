@@ -1,6 +1,7 @@
 package com.carmotors.util;
 
 import com.carmotors.excepcion.ValidacionException;
+import com.carmotors.servicio.TiempoTrabajo;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 

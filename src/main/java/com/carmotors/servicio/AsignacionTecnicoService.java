@@ -6,7 +6,7 @@ import com.carmotors.excepcion.DaoException;
 import com.carmotors.excepcion.ValidacionException;
 import com.carmotors.modelo.ServicioTecnico;
 import com.carmotors.modelo.CargaTecnico;
-import com.carmotors.util.TiempoTrabajo;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Connection;
