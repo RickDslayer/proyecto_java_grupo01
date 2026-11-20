@@ -68,7 +68,12 @@ public final class Consola {
     /** Nunca confirma por defecto: ENTER, N o EOF cancelan. */
     public boolean confirmar(String pregunta) {
         mostrar(pregunta);
-        return "S".equals(leerOpcion("[S] Confirmar / [N] Cancelar", "S", "N"));
+        while (true) {
+            String respuesta = leerTexto("[S] Confirmar / [N o ENTER] Cancelar");
+            if (respuesta == null || respuesta.isBlank() || "N".equalsIgnoreCase(respuesta)) return false;
+            if ("S".equalsIgnoreCase(respuesta)) return true;
+            mostrar("[!] Responde S para confirmar o N para cancelar.");
+        }
     }
 
     /** Conserva la pantalla del resultado hasta que el usuario decida regresar. */

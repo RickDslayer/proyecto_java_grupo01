@@ -244,6 +244,7 @@ Pruebas específicas:
 mvn -Dtest=RecorridoIntegradoTest test
 mvn -Dtest=OperacionFacturacionIntegracionTest test
 mvn -Dtest=ExportadorFacturaTxtTest test
+mvn -Dtest=MenuConsolaIntegracionTest,ConsolaTest test
 ```
 
 `RecorridoIntegradoTest` recorre cliente → vehículo → técnico → orden → operación
@@ -252,6 +253,9 @@ y facturación concurrente. Las pruebas adicionales verifican precios histórico
 protección de órdenes cerradas, exportación y recuperación después de fallos de
 archivo. El simulador en `src/test` es una maqueta independiente; la aplicación
 real se ejecuta con `com.carmotors.Main`.
+
+La cobertura del menú y los criterios contrastados se detallan en
+[Verificación del menú de consola](docs/verificacion-menu.md).
 
 ## Organización del repositorio
 

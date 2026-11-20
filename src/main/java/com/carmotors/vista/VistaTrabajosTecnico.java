@@ -77,7 +77,7 @@ public final class VistaTrabajosTecnico {
             consola.mostrar("1. Órdenes activas");
             consola.mostrar("2. Historial de trabajos");
             consola.mostrar("0. Regresar");
-            String opcion = consola.leerOpcion("Opción", "1", "2", "3", "0");
+            String opcion = consola.leerOpcion("Opción", "1", "2", "0");
             if (opcion == null || "0".equals(opcion)) return;
             listarTrabajos(sesion.tecnicoId(), "1".equals(opcion));
         }
