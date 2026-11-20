@@ -191,6 +191,12 @@ Estructura completa en [database/schema.sql](database/schema.sql), datos de
 práctica en [database/data.sql](database/data.sql) y diagrama editable en
 [docs/diagrama-er.drawio](docs/diagrama-er.drawio).
 
+Los diagramas actualizados de clases y arquitectura están en
+[diagrama-clases.png](docs/diagrama-clases.png) y
+[arquitectura.png](docs/arquitectura.png). Los archivos anteriores se conservan
+como documentación de desarrollo; la entrega de `main` incluye solo una imagen
+actual por diagrama.
+
 ## Arquitectura, SOLID y patrones
 
 ```text
@@ -259,8 +265,8 @@ La cobertura del menú y los criterios contrastados se detallan en
 
 ## Organización del repositorio
 
-`main` conserva versiones estables, `developer` integra cambios y las ramas
-`feature/` contienen funcionalidades. `.gitignore` excluye `/target/`, `*.class`,
+`main` contiene la entrega de la aplicación; `developer` conserva la integración,
+las pruebas y la documentación de desarrollo. `.gitignore` excluye `/target/`, `*.class`,
 archivos de IDE, `*.log` y la carpeta local de facturas generadas.
 
 ## Autores
