@@ -5,7 +5,7 @@ import com.carmotors.excepcion.DaoException;
 import com.carmotors.excepcion.ValidacionException;
 import com.carmotors.modelo.ServicioTecnico;
 import com.carmotors.servicio.AsignacionTecnicoService;
-import com.carmotors.util.TiempoTrabajo;
+import com.carmotors.servicio.TiempoTrabajo;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;

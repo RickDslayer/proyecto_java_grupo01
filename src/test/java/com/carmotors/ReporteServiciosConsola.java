@@ -1,4 +1,4 @@
-package com.carmotors.vista;
+package com.carmotors;
 
 import com.carmotors.modelo.FilaReporteDTO;
 import com.carmotors.modelo.FiltroReporte;

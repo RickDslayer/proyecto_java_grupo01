@@ -1,4 +1,4 @@
-package com.carmotors.util;
+package com.carmotors.servicio;
 
 import com.carmotors.excepcion.ValidacionException;
 import java.math.BigDecimal;
