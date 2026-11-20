@@ -51,6 +51,7 @@ class ServiciosFactoryMethodTest {
         DAOFactory<FacturaDAO> creador=new DAOFactory<>() {
             @Override protected FacturaDAO crearDAO() {
                 return new FacturaDAO() {
+                    public Optional<com.carmotors.modelo.DocumentoFactura> buscarPorOrden(Connection c, long id) { throw new AssertionError("No debe consultar factura"); }
                     public Optional<DatosOrdenParaFactura> buscarOrdenCompletada(Connection recibida,long id) {
                         assertSame(con,recibida);assertEquals(9,id);
                         return Optional.of(new DatosOrdenParaFactura(List.of(),List.of(
@@ -69,7 +70,8 @@ class ServiciosFactoryMethodTest {
 
     @Test void facturaSinTransaccionNoInvocaElProducto() {
         FacturaDAO prohibido=new FacturaDAO() {
-            public Optional<DatosOrdenParaFactura> buscarOrdenCompletada(Connection con,long id) {throw new AssertionError("No debe consultar");}
+            public Optional<com.carmotors.modelo.DocumentoFactura> buscarPorOrden(Connection c, long id) { throw new AssertionError("No debe consultar factura"); }
+                    public Optional<DatosOrdenParaFactura> buscarOrdenCompletada(Connection con,long id) {throw new AssertionError("No debe consultar");}
             public void insertar(Connection con,FacturaDTO factura,LocalDateTime fecha) {throw new AssertionError("No debe insertar");}
         };
         assertThrows(ValidacionException.class,()->new FacturacionService(prohibido,BigDecimal.ZERO)

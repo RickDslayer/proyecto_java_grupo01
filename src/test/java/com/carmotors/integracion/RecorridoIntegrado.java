@@ -90,8 +90,9 @@ public final class RecorridoIntegrado {
             exigir(asignaciones.listarPorOrden(ordenId).size()==1,"Falta el responsable de la orden");
             exigir(asignaciones.listarPorOrden(ordenId).get(0).estadoOrden().equals("En Proceso"),"Asignar debe iniciar la orden");
             pasos.add("OK técnico asignado, orden En Proceso y 02:30 horas registradas");
-            // Fixture de mano de obra: registrar operaciones del catálogo todavía no tiene servicio propio.
-            try(Connection con=conexiones.get()) {sql(con,"INSERT INTO servicios_detalle(servicio_id,servicio_catalogo_id,precio_cobrado) VALUES(?,1,12000.00)",ordenId);}
+            new OperacionOrdenService(new OperacionOrdenDAOFactory().obtenerDAO(),
+                    new ServicioCatalogoDAOFactory().obtenerDAO(), daoOrdenes, conexiones)
+                    .registrar(ordenId, 1, new BigDecimal("12000.00"));
             reservas.reservar(ordenId,repuestoId,4);
             ExistenciasService stock=new ExistenciasService(new ExistenciasDAOFactory().obtenerDAO(),conexiones,()->LocalDate.now(reloj));
             StockRepuesto reservado=stock.resumen(repuestoId);

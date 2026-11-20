@@ -64,7 +64,7 @@ El argumento explícito --ejecutar evita crear fixtures al solicitar solo ayuda.
 3. Registrar técnico, repuesto e ingreso de lote con sus servicios/DAO reales.
 4. Crear orden Pendiente usando el vehículo y consultar su propietario.
 5. Asignar técnico: la orden pasa automáticamente a En Proceso. Registrar 02:30 horas.
-6. Preparar operación de mano de obra por 12000.00 (fixture de catálogo).
+6. Registrar una operación de mano de obra por 12000.00 mediante OperacionOrdenService.
 7. Reservar cuatro unidades de diez: físico 10, reservas 4, disponible 6.
 8. Completar la orden ya iniciada: físico 6, reservas activas 0, estado Completado.
 9. Repetir completar: rechazo y ningún descuento adicional.

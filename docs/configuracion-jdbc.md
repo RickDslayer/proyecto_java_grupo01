@@ -16,13 +16,14 @@ En el cliente (compatible también con Windows):
 
 ```sql
 SOURCE database/schema.sql;
+SOURCE database/data.sql;
 ```
 
 `schema.sql` crea `carmotors_test` y, al final, el usuario `carmotors_admin`
 para `localhost` con sus permisos. Debe ejecutarse con un usuario administrador.
 **Volver a ejecutar schema.sql borra y recrea esa base**, por lo que debe usarse
 solo al preparar/reinicializar datos locales. No lo ejecuta ConexionFactory.
-El script de datos no está incluido en esta tarea; cargarlo cuando se integre.
+`data.sql` carga los catálogos y datos de práctica después de crear el esquema.
 
 ## Configuración en código
 
