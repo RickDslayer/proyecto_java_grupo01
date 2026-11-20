@@ -11,3 +11,6 @@
 
 # Aplicación: archivos de log generados
 *.log
+
+# Facturas generadas localmente
+/facturas/

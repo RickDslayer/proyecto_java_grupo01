@@ -1,60 +1,73 @@
 package com.carmotors;
 
 import com.carmotors.config.ConexionFactory;
-import com.carmotors.controlador.ClienteController;
-import com.carmotors.controlador.HistorialController;
+import com.carmotors.config.ConfiguracionAplicacion;
 import com.carmotors.controlador.AlertasInventarioController;
+import com.carmotors.controlador.AsignacionTecnicoController;
+import com.carmotors.controlador.ClienteController;
+import com.carmotors.controlador.ConsultaLotesController;
+import com.carmotors.controlador.ConsultaTallerController;
+import com.carmotors.controlador.EvaluacionProveedorController;
+import com.carmotors.controlador.FacturaController;
+import com.carmotors.controlador.HistorialController;
 import com.carmotors.controlador.LoteController;
+import com.carmotors.controlador.OperacionOrdenController;
+import com.carmotors.controlador.OrdenServicioController;
 import com.carmotors.controlador.ProveedorController;
 import com.carmotors.controlador.ProveedorRepuestoController;
-import com.carmotors.controlador.EvaluacionProveedorController;
-import com.carmotors.controlador.ConsultaLotesController;
+import com.carmotors.controlador.ReporteController;
 import com.carmotors.controlador.RepuestoController;
 import com.carmotors.controlador.RepuestoTipoController;
 import com.carmotors.controlador.ReservasOrdenController;
-import com.carmotors.controlador.AsignacionTecnicoController;
-import com.carmotors.controlador.ConsultaTallerController;
-import com.carmotors.controlador.OrdenServicioController;
-import com.carmotors.controlador.VehiculoController;
 import com.carmotors.controlador.TecnicoController;
+import com.carmotors.controlador.VehiculoController;
 import com.carmotors.dao.OrdenServicioDAO;
 import com.carmotors.dao.VehiculoDAO;
+import com.carmotors.dao.factory.AlertasDAOFactory;
 import com.carmotors.dao.factory.ClienteDAOFactory;
 import com.carmotors.dao.factory.ClienteVehiculosDAOFactory;
-import com.carmotors.dao.factory.AlertasDAOFactory;
+import com.carmotors.dao.factory.EvaluacionProveedorDAOFactory;
 import com.carmotors.dao.factory.ExistenciasDAOFactory;
-import com.carmotors.dao.factory.LoteDAOFactory;
+import com.carmotors.dao.factory.FacturaDAOFactory;
 import com.carmotors.dao.factory.HistorialServiciosDAOFactory;
+import com.carmotors.dao.factory.InventarioReservasFactory;
+import com.carmotors.dao.factory.LoteDAOFactory;
+import com.carmotors.dao.factory.OperacionOrdenDAOFactory;
+import com.carmotors.dao.factory.OrdenServicioDAOFactory;
 import com.carmotors.dao.factory.ProveedorDAOFactory;
 import com.carmotors.dao.factory.ProveedorRepuestoDAOFactory;
-import com.carmotors.dao.factory.EvaluacionProveedorDAOFactory;
 import com.carmotors.dao.factory.RepuestoDAOFactory;
 import com.carmotors.dao.factory.RepuestoTipoDAOFactory;
-import com.carmotors.dao.factory.InventarioReservasFactory;
-import com.carmotors.dao.factory.OrdenServicioDAOFactory;
+import com.carmotors.dao.factory.ServicioCatalogoDAOFactory;
 import com.carmotors.dao.factory.ServicioTecnicoDAOFactory;
 import com.carmotors.dao.factory.TecnicoDAOFactory;
 import com.carmotors.dao.factory.VehiculoDAOFactory;
-import com.carmotors.excepcion.ValidacionException;
-import com.carmotors.servicio.ClienteService;
-import com.carmotors.servicio.HistorialService;
-import com.carmotors.servicio.HistorialServiciosConsultaJdbc;
-import com.carmotors.servicio.RecordatorioPreventivoService;
 import com.carmotors.servicio.AlertasInventarioService;
-import com.carmotors.servicio.ExistenciasService;
-import com.carmotors.servicio.LoteService;
-import com.carmotors.servicio.ProveedorService;
-import com.carmotors.servicio.ProveedorRepuestoService;
-import com.carmotors.servicio.EvaluacionProveedorService;
-import com.carmotors.servicio.RepuestoService;
-import com.carmotors.servicio.RepuestoTipoService;
 import com.carmotors.servicio.AsignacionTecnicoService;
-import com.carmotors.servicio.TecnicoService;
+import com.carmotors.servicio.ClienteService;
+import com.carmotors.servicio.ConsultaFacturaService;
+import com.carmotors.servicio.ConsumoRepuestosStrategy;
+import com.carmotors.servicio.EvaluacionProveedorService;
+import com.carmotors.servicio.ExistenciasService;
+import com.carmotors.servicio.ExportadorFacturaTxt;
 import com.carmotors.servicio.FacturacionOrden;
 import com.carmotors.servicio.FacturacionService;
+import com.carmotors.servicio.HistorialService;
+import com.carmotors.servicio.HistorialServiciosConsultaJdbc;
+import com.carmotors.servicio.LoteService;
+import com.carmotors.servicio.OperacionOrdenService;
 import com.carmotors.servicio.OrdenServicioService;
+import com.carmotors.servicio.ProductividadTecnicosStrategy;
+import com.carmotors.servicio.ProveedorRepuestoService;
+import com.carmotors.servicio.ProveedorService;
 import com.carmotors.servicio.PublicadorInventario;
+import com.carmotors.servicio.RecordatorioPreventivoService;
+import com.carmotors.servicio.ReporteStrategy;
+import com.carmotors.servicio.RepuestoService;
+import com.carmotors.servicio.RepuestoTipoService;
 import com.carmotors.servicio.ReservasOrdenService;
+import com.carmotors.servicio.ServiciosMasSolicitadosStrategy;
+import com.carmotors.servicio.TecnicoService;
 import com.carmotors.servicio.VehiculoConsultaImpl;
 import com.carmotors.servicio.VehiculoService;
 import com.carmotors.vista.Consola;
@@ -62,33 +75,28 @@ import com.carmotors.vista.MenuAdministrador;
 import com.carmotors.vista.MenuGestionAdministrativa;
 import com.carmotors.vista.MenuPrincipal;
 import com.carmotors.vista.MenuTecnico;
-import com.carmotors.vista.VistaClientes;
-import com.carmotors.vista.VistaTecnicos;
-import com.carmotors.vista.VistaInventario;
-import com.carmotors.vista.VistaHistorial;
-import com.carmotors.vista.VistaFacturacion;
-import com.carmotors.vista.VistaCatalogoRepuestos;
-import com.carmotors.vista.VistaProveedores;
 import com.carmotors.vista.VistaCatalogoProveedorRepuesto;
+import com.carmotors.vista.VistaCatalogoRepuestos;
+import com.carmotors.vista.VistaClientes;
 import com.carmotors.vista.VistaEvaluacionesProveedor;
+import com.carmotors.vista.VistaFacturacion;
+import com.carmotors.vista.VistaHistorial;
+import com.carmotors.vista.VistaInventario;
 import com.carmotors.vista.VistaLogin;
+import com.carmotors.vista.VistaOperaciones;
 import com.carmotors.vista.VistaOrdenes;
+import com.carmotors.vista.VistaProveedores;
+import com.carmotors.vista.VistaReportes;
 import com.carmotors.vista.VistaSupervision;
+import com.carmotors.vista.VistaTecnicos;
 import com.carmotors.vista.VistaTrabajosTecnico;
 import com.carmotors.vista.VistaVehiculos;
-import com.carmotors.vista.VistaReportes;
-import com.carmotors.controlador.ReporteController;
-import com.carmotors.servicio.ReporteStrategy;
-import com.carmotors.servicio.ServiciosMasSolicitadosStrategy;
-import com.carmotors.servicio.ProductividadTecnicosStrategy;
-import com.carmotors.servicio.ConsumoRepuestosStrategy;
-import java.util.List;
 
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Objects;
 import java.util.Scanner;
 import java.util.function.Supplier;
@@ -126,21 +134,8 @@ public final class Main {
         ReservasOrdenService reservas = new ReservasOrdenService(
                 ordenDao, new InventarioReservasFactory().obtenerDAO(), conexiones, reloj, publicador);
 
-        // Tasa configurada por la aplicación; nunca se presume un porcentaje legal.
-        // Su validación es diferida: crear/consultar órdenes no requiere facturar.
-        FacturacionOrden facturacion = (conexion, ordenId, fecha) -> {
-            String valor = System.getenv("CARMOTORS_TASA_IMPUESTO");
-            if (valor == null || valor.isBlank()) {
-                throw new ValidacionException("Para facturar, configure CARMOTORS_TASA_IMPUESTO "
-                        + "con la tasa decimal aprobada por el equipo (por ejemplo, 0.19).");
-            }
-            BigDecimal tasa;
-            try { tasa = new BigDecimal(valor.trim()); }
-            catch (NumberFormatException e) {
-                throw new ValidacionException("CARMOTORS_TASA_IMPUESTO debe ser un decimal entre 0 y 1.");
-            }
-            new FacturacionService(tasa).facturar(conexion, ordenId, fecha);
-        };
+        FacturacionOrden facturacion = new FacturacionService(
+                ConfiguracionAplicacion.TASA_IMPUESTO);
         OrdenServicioService ordenService = new OrdenServicioService(
                 ordenDao, new VehiculoConsultaImpl(vehiculoDao), conexiones, reloj,
                 reservas, facturacion, publicador);
@@ -215,13 +210,24 @@ public final class Main {
         VistaHistorial vistaHistorial = new VistaHistorial(
                 consola, historialCtrl, clienteCtrl, vehiculoCtrl);
 
+        var operacionesService = new OperacionOrdenService(
+                new OperacionOrdenDAOFactory().obtenerDAO(),
+                new ServicioCatalogoDAOFactory().obtenerDAO(), ordenDao, conexiones);
+        var operaciones = new VistaOperaciones(consola,
+                new OperacionOrdenController(operacionesService));
+        var facturaCtrl = new FacturaController(
+                new ConsultaFacturaService(
+                        new FacturaDAOFactory().obtenerDAO(), conexiones,
+                        new ExportadorFacturaTxt()));
+
         VistaClientes clientes = new VistaClientes(consola, clienteCtrl);
         VistaTecnicos vistaTecnicos = new VistaTecnicos(consola, tecnicoCtrl, consultaTaller);
         VistaVehiculos vehiculos = new VistaVehiculos(consola, vehiculoCtrl, clienteCtrl);
-        VistaOrdenes ordenes = new VistaOrdenes(consola, ordenCtrl, vehiculoCtrl);
-        VistaFacturacion vistaFacturacion = new VistaFacturacion(consola, ordenCtrl);
+        VistaOrdenes ordenes = new VistaOrdenes(consola, ordenCtrl, vehiculoCtrl, operaciones);
+        VistaFacturacion vistaFacturacion = new VistaFacturacion(consola, ordenCtrl, facturaCtrl,
+                ConfiguracionAplicacion.CARPETA_FACTURAS.toString());
         VistaSupervision supervision = new VistaSupervision(consola, consultaTaller, asignacionCtrl);
-        VistaTrabajosTecnico trabajos = new VistaTrabajosTecnico(consola, consultaTaller, ordenCtrl);
+        VistaTrabajosTecnico trabajos = new VistaTrabajosTecnico(consola, consultaTaller, ordenCtrl, operaciones);
 
         // Las estrategias existentes consultan MySQL mediante sus DAO y ConexionFactory.
         // El controller únicamente adapta los filtros de fecha y orden.
