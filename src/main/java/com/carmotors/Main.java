@@ -110,7 +110,7 @@ public final class Main {
 
     public static void main(String[] args) {
         Consola consola = new Consola(new Scanner(System.in, StandardCharsets.UTF_8), System.out);
-        ensamblar(consola).iniciar();
+    ensamblar(consola).iniciar();
     }
 
     public static MenuPrincipal ensamblar(Consola consola) {
