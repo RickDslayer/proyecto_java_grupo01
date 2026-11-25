@@ -1,11 +1,27 @@
-
 package com.carmotors.modelo;
+
+import java.time.LocalDateTime;
 
 public record FilaReporteDTO(
         String codigo,
         String nombre,
-        long cantidad
+        long cantidad,
+        LocalDateTime fechaRecepcion,
+        LocalDateTime fechaCompletado,
+        LocalDateTime fechaEntrega,
+        String estado
 ) {
+
+    // Constructor para los reportes anteriores.
+    public FilaReporteDTO(
+            String codigo,
+            String nombre,
+            long cantidad
+    ) {
+        this(codigo, nombre, cantidad,
+                null, null, null, null);
+    }
+
     public FilaReporteDTO {
         if (codigo == null || codigo.isBlank()) {
             throw new IllegalArgumentException("Código vacío");

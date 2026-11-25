@@ -1,5 +1,6 @@
 package com.carmotors;
 
+import com.carmotors.servicio.ServiciosCompletadosStrategy;
 import com.carmotors.config.ConexionFactory;
 import com.carmotors.config.ConfiguracionAplicacion;
 import com.carmotors.controlador.AlertasInventarioController;
@@ -231,10 +232,13 @@ public final class Main {
 
         // Las estrategias existentes consultan MySQL mediante sus DAO y ConexionFactory.
         // El controller únicamente adapta los filtros de fecha y orden.
-        ReporteController reporteCtrl = new ReporteController(List.<ReporteStrategy>of(
-                new ServiciosMasSolicitadosStrategy(),
-                new ProductividadTecnicosStrategy(),
-                new ConsumoRepuestosStrategy()));
+        ReporteController reporteCtrl =
+                new ReporteController(List.<ReporteStrategy>of(
+                        new ServiciosMasSolicitadosStrategy(),
+                        new ProductividadTecnicosStrategy(),
+                        new ConsumoRepuestosStrategy(),
+                        new ServiciosCompletadosStrategy()
+                ));
         VistaReportes reportes = new VistaReportes(consola, reporteCtrl);
 
         VistaLogin login = new VistaLogin(consola);
